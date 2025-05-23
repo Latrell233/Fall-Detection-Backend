@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:13
+    container_name: fall_detection_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: fall_detection
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d fall_detection"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: .
+    container_name: fall_detection_backend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: fall_detection
+      JWT_SECRET: your_secure_jwt_secret_key_here
+      MQTT_BROKER: mqtt://emqx:1883
+      NODE_ENV: development
+    ports:
+      - "3000:3000"
+    volumes:
+      - type: bind
+        source: ./src
+        target: /usr/src/app/src
+      - type: bind
+        source: ./config
+        target: /usr/src/app/config
+      - type: volume
+        source: node_modules
+        target: /usr/src/app/node_modules
+    restart: unless-stopped
+
+  emqx:
+    image: emqx:5
+    container_name: fall_detection_emqx
+    ports:
+      - "1883:1883"  # MQTT
+      - "8083:8083"  # MQTT over WebSockets
+      - "8084:8084"  # MQTT over SSL
+      - "8883:8883"  # MQTT over SSL
+      - "18083:18083"  # Dashboard
+    environment:
+      EMQX_LOG__LEVEL: warning
+    volumes:
+      - emqx_data:/opt/emqx/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:18083"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  emqx_data:
+  node_modules:
