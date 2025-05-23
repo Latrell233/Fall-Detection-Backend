@@ -72,32 +72,88 @@ curl -X POST http://localhost:3000/api/v1/device/heartbeat \
 ### 事件上报
 
 #### POST /device/event
-设备检测到跌倒事件时上报。
+设备检测到跌倒事件时上报。支持`application/json`（图片/视频为URL或Base64）和`multipart/form-data`（图片/视频为文件）。
 
-**请求参数：** (multipart/form-data)
+**请求头：**
 ```
-device_id: DEVICE_001
-event_type: fall
-timestamp: 2024-03-20T10:00:00Z
-confidence: 0.95
-image_file: <二进制图片文件>
-video_file: <二进制视频文件>
+Authorization: Device {device_token}
+Content-Type: application/json
 ```
+或
+```
+Authorization: Device {device_token}
+Content-Type: multipart/form-data
+```
+
+**请求参数（JSON方式）：**
+```json
+{
+  "device_id": "DEVICE_001",
+  "event_type": "fall",
+  "timestamp": "2024-03-20T10:00:00Z",
+  "confidence": 0.95,
+  "image_file": "test.jpg",      // 可选，图片文件名或Base64
+  "video_file": "test.mp4"       // 可选，视频文件名或URL
+}
+```
+
+**请求参数（multipart方式）：**
+- device_id: 设备ID
+- event_type: 事件类型（如fall）
+- timestamp: 事件时间
+- confidence: 置信度
+- image_file: 图片文件
+- video_file: 视频文件
 
 **响应：**
 ```json
 {
-  "saved": true,
-  "alarm_id": 1001,
-  "message": "Event recorded"
+  "success": true,
+  "data": {
+    "alarm_id": 2,
+    "device_id": "DEVICE_003",
+    "alarm_type": "fall",
+    "alarm_time": "2024-03-20T10:00:00.000Z",
+    "confidence": 0.95,
+    "status": "pending",
+    "video_url": "test.mp4",
+    "created_at": "2025-05-23T19:08:45.536Z",
+    "device_name": "卧室摄像头"
+  }
+}
+```
+**错误响应：**
+```json
+{
+  "error": "Device not found"
+}
+```
+或
+```json
+{
+  "error": "Failed to report event"
 }
 ```
 
 **使用示例：**
 ```bash
 curl -X POST http://localhost:3000/api/v1/device/event \
-  -H "Authorization: Device eyJhbGci..." \
-  -F "device_id=DEVICE_001" \
+  -H "Authorization: Device <device_token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "device_id": "DEVICE_003",
+    "event_type": "fall",
+    "timestamp": "2024-03-20T10:00:00Z",
+    "confidence": 0.95,
+    "image_file": "test.jpg",
+    "video_file": "test.mp4"
+  }'
+```
+或
+```bash
+curl -X POST http://localhost:3000/api/v1/device/event \
+  -H "Authorization: Device <device_token>" \
+  -F "device_id=DEVICE_003" \
   -F "event_type=fall" \
   -F "timestamp=2024-03-20T10:00:00Z" \
   -F "confidence=0.95" \
@@ -272,71 +328,76 @@ curl -X POST http://localhost:3000/api/v1/device/register \
 
 ### 告警管理
 
-#### GET /alarms
-获取告警列表。
+#### GET /alarm
 
-**请求参数：**
-- `limit`: 返回记录数量限制
-- `handled`: 是否已处理 (0/1)
+**功能说明：**
+获取当前用户所有设备的告警列表。
+
+**请求头：**
+```
+Authorization: Bearer {access_token}
+```
+
+**请求参数（Query）：**
+- limit: 返回记录数量限制（默认20）
+- handled: 是否已处理（0/1）
 
 **响应：**
 ```json
-[
-  {
-    "alarm_id": 1001,
-    "device_id": "DEVICE_001",
-    "event_type": "fall",
-    "event_time": "2024-03-20T10:00:00Z",
-    "handled": false
+{
+  "success": true,
+  "data": {
+    "alarms": [
+      {
+        "alarm_id": 2,
+        "device_id": "DEVICE_003",
+        "alarm_type": "fall",
+        "alarm_time": "2024-03-20T10:00:00.000Z",
+        "confidence": 0.95,
+        "status": "pending",
+        "video_url": "test.mp4",
+        "created_at": "2025-05-23T19:08:45.536Z",
+        "device_name": "卧室摄像头"
+      }
+    ],
+    "total": 1,
+    "limit": 20,
+    "offset": 0
   }
-]
-```
-
-#### GET /alarms/{alarm_id}
-获取告警详情。
-
-**响应：**
-```json
-{
-  "alarm_id": 1001,
-  "device_id": "DEVICE_001",
-  "event_type": "fall",
-  "event_time": "2024-03-20T10:00:00Z",
-  "confidence": 0.95,
-  "image_url": "https://example.com/media/DEVICE_001_1001.jpg",
-  "video_url": "https://example.com/media/DEVICE_001_1001.mp4",
-  "handled": false,
-  "alarm_message": "Detected a fall in living room"
 }
 ```
 
-#### POST /alarms/{alarm_id}/ack
-标记告警为已处理。
-
-**响应：**
+**错误响应：**
 ```json
 {
-  "success": true
+  "error": "Unauthorized"
+}
+```
+或
+```json
+{
+  "error": "Failed to get alarms"
 }
 ```
 
-## 错误处理
+**使用示例：**
+```bash
+curl -X GET "http://localhost:3000/api/v1/alarm?limit=20&handled=0" \
+  -H "Authorization: Bearer <access_token>"
+```
 
-### HTTP 错误代码
-| 代码 | 描述 | 解决方案 |
-|------|------|------|
-| 400 | 请求参数错误 | 检查请求体格式和必填字段 |
-| 401 | 未授权 | 检查认证token是否有效 |
-| 403 | 禁止访问 | 检查用户权限 |
-| 404 | 资源未找到 | 检查资源ID是否存在 |
-| 500 | 服务器错误 | 联系管理员 |
+## 认证方式说明
 
-### 常见错误响应
+- 设备端接口必须用 `Authorization: Device <device_token>`
+- 移动端接口必须用 `Authorization: Bearer <access_token>`
+
+## 错误响应格式
+
+所有接口错误响应统一格式：
 ```json
 {
   "error": "错误描述",
-  "details": "详细错误信息",
-  "code": "错误代码"
+  "details": "详细错误信息（可选）"
 }
 ```
 

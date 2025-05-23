@@ -42,10 +42,20 @@ const getDeviceSchema = Joi.object({
   device_id: Joi.string().max(50)
 });
 
+const reportEventSchema = Joi.object({
+  device_id: Joi.string().required(),
+  event_type: Joi.string().valid('fall', 'abnormal', 'other').required(),
+  timestamp: Joi.date().iso().required(),
+  confidence: Joi.number().min(0).max(1).required(),
+  image_file: Joi.string().allow(null),
+  video_file: Joi.string().allow(null)
+});
+
 module.exports = {
   registerDeviceSchema,
   updateDeviceSchema,
   bindDeviceSchema,
   unbindDeviceSchema,
-  getDeviceSchema
+  getDeviceSchema,
+  reportEventSchema
 };

@@ -257,6 +257,40 @@ const deviceController = {
       console.error('Register device error:', err);
       res.status(500).json({ error: 'Failed to register device' });
     }
+  },
+
+  // 设备事件上报
+  async reportEvent(req, res) {
+    try {
+      const { device_id, event_type, timestamp, confidence, image_file, video_file } = req.body;
+
+      // 检查设备是否存在
+      const device = await db.query(
+        'SELECT * FROM devices WHERE device_id = $1',
+        [device_id]
+      );
+
+      if (device.rows.length === 0) {
+        return res.status(404).json({ error: 'Device not found' });
+      }
+
+      // 创建告警记录
+      const result = await db.query(
+        `INSERT INTO alarm_records 
+        (device_id, alarm_type, alarm_time, confidence, video_url, status, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        RETURNING *`,
+        [device_id, event_type, timestamp, confidence, video_file, 'pending']
+      );
+
+      res.json({
+        success: true,
+        data: result.rows[0]
+      });
+    } catch (err) {
+      console.error('Report event error:', err);
+      res.status(500).json({ error: 'Failed to report event' });
+    }
   }
 };
 

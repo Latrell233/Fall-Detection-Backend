@@ -8,7 +8,8 @@ const {
   registerDeviceSchema,
   updateDeviceSchema,
   bindDeviceSchema,
-  unbindDeviceSchema
+  unbindDeviceSchema,
+  reportEventSchema
 } = require('../../validation/deviceSchemas');
 
 // 设备注册和绑定
@@ -22,6 +23,13 @@ router.post('/register',
 router.post('/heartbeat',
   authenticateDevice,
   deviceController.heartbeat
+);
+
+// 设备事件上报
+router.post('/event',
+  authenticateDevice,
+  validate(reportEventSchema),
+  deviceController.reportEvent
 );
 
 // 设备解绑
