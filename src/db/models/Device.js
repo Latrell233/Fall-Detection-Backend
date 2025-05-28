@@ -3,36 +3,36 @@ const sequelize = require('../index');
 
 const Device = sequelize.define('Device', {
   device_id: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(50),
     primaryKey: true
   },
   device_name: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(100),
     allowNull: false
   },
   user_id: {
     type: DataTypes.INTEGER,
-    allowNull: true,
+    allowNull: false,
     references: {
       model: 'users',
       key: 'user_id'
     }
   },
   install_location: {
-    type: DataTypes.STRING,
-    allowNull: true,
-    defaultValue: 'None'
+    type: DataTypes.STRING(100),
+    allowNull: false
   },
   device_secret: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(100),
     allowNull: false
   },
   status: {
-    type: DataTypes.ENUM('online', 'offline', 'maintenance'),
+    type: DataTypes.STRING(20),
+    allowNull: false,
     defaultValue: 'offline'
   },
   model_version: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(50),
     allowNull: false
   },
   last_active: {

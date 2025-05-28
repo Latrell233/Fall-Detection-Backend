@@ -1,55 +1,70 @@
 const db = require('../db');
+const { AlarmRecord, Device, Video } = require('../db/models');
+const { Op } = require('sequelize');
 
 module.exports = {
   // 获取报警列表
   async getAlarms(req, res) {
     try {
       const userId = req.user.userId;
-      const { limit = 20, offset = 0, handled, start_time, end_time } = req.query;
+      const { from, to, status, device_id, minConfidence } = req.query;
 
-      // 构建查询条件
-      let query = `
-        SELECT 
-          ar.alarm_id, ar.device_id, ar.alarm_type, ar.alarm_time,
-          ar.confidence, ar.status, ar.video_url, ar.created_at,
-          d.device_name
-        FROM alarm_records ar
-        JOIN devices d ON ar.device_id = d.device_id
-        WHERE d.user_id = $1
-      `;
-      const params = [userId];
-      let paramIndex = 2;
+      const whereClause = {
+        user_id: userId
+      };
 
-      if (handled !== undefined) {
-        query += ` AND ar.status = $${paramIndex}`;
-        params.push(handled === 'true' ? 'handled' : 'pending');
-        paramIndex++;
+      if (status) {
+        whereClause.handled = status === 'handled';
       }
 
-      if (start_time) {
-        query += ` AND ar.alarm_time >= $${paramIndex}`;
-        params.push(start_time);
-        paramIndex++;
+      if (from) {
+        whereClause.event_time = {
+          [Op.gte]: from
+        };
       }
 
-      if (end_time) {
-        query += ` AND ar.alarm_time <= $${paramIndex}`;
-        params.push(end_time);
-        paramIndex++;
+      if (to) {
+        whereClause.event_time = {
+          ...whereClause.event_time,
+          [Op.lte]: to
+        };
       }
 
-      query += ` ORDER BY ar.alarm_time DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
-      params.push(parseInt(limit), parseInt(offset));
+      if (device_id) {
+        whereClause.device_id = device_id;
+      }
 
-      const alarms = await db.query(query, params);
+      if (minConfidence) {
+        whereClause.confidence = {
+          [Op.gte]: parseFloat(minConfidence)
+        };
+      }
+
+      const alarms = await AlarmRecord.findAndCountAll({
+        attributes: [
+          'alarm_id',
+          'device_id',
+          'event_type',
+          'event_time',
+          'image_path',
+          'confidence',
+          'handled',
+          'alarm_message',
+          'created_at'
+        ],
+        where: whereClause,
+        include: [{
+          model: Device,
+          attributes: ['device_name', 'install_location']
+        }],
+        order: [['event_time', 'DESC']]
+      });
 
       res.json({
         success: true,
         data: {
           alarms: alarms.rows,
-          total: alarms.rowCount,
-          limit: parseInt(limit),
-          offset: parseInt(offset)
+          total: alarms.count
         }
       });
     } catch (err) {
@@ -64,24 +79,30 @@ module.exports = {
       const userId = req.user.userId;
       const { alarmId } = req.params;
 
-      const alarm = await db.query(
-        `SELECT 
-          ar.alarm_id, ar.device_id, ar.alarm_type, ar.alarm_time,
-          ar.confidence, ar.status, ar.video_url, ar.created_at,
-          d.device_name, d.install_location
-        FROM alarm_records ar
-        JOIN devices d ON ar.device_id = d.device_id
-        WHERE ar.alarm_id = $1 AND d.user_id = $2`,
-        [alarmId, userId]
-      );
+      const alarm = await AlarmRecord.findOne({
+        where: {
+          alarm_id: alarmId,
+          user_id: userId
+        },
+        include: [
+          {
+            model: Device,
+            attributes: ['device_name', 'install_location']
+          },
+          {
+            model: Video,
+            attributes: ['video_id', 'file_path', 'duration', 'format']
+          }
+        ]
+      });
 
-      if (alarm.rows.length === 0) {
+      if (!alarm) {
         return res.status(404).json({ error: 'Alarm not found' });
       }
 
       res.json({
         success: true,
-        data: alarm.rows[0]
+        data: alarm
       });
     } catch (err) {
       console.error('Get alarm detail error:', err);
@@ -94,29 +115,35 @@ module.exports = {
     try {
       const userId = req.user.userId;
       const { alarmId } = req.params;
+      const { action, message } = req.body;
 
-      // 检查报警是否存在且属于当前用户
-      const alarm = await db.query(
-        `SELECT ar.alarm_id
-        FROM alarm_records ar
-        JOIN devices d ON ar.device_id = d.device_id
-        WHERE ar.alarm_id = $1 AND d.user_id = $2`,
-        [alarmId, userId]
-      );
+      if (!['confirm', 'dismiss'].includes(action)) {
+        return res.status(400).json({ 
+          error: 'Invalid action',
+          details: 'Action must be either confirm or dismiss'
+        });
+      }
 
-      if (alarm.rows.length === 0) {
+      const alarm = await AlarmRecord.findOne({
+        where: {
+          alarm_id: alarmId,
+          user_id: userId
+        }
+      });
+
+      if (!alarm) {
         return res.status(404).json({ error: 'Alarm not found or not authorized' });
       }
 
       // 更新报警状态
-      const result = await db.query(
-        'UPDATE alarm_records SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE alarm_id = $2 RETURNING *',
-        ['handled', alarmId]
-      );
+      await alarm.update({
+        handled: true,
+        updated_at: new Date()
+      });
 
       res.json({
         success: true,
-        data: result.rows[0]
+        message: 'Alarm acknowledged successfully'
       });
     } catch (err) {
       console.error('Acknowledge alarm error:', err);

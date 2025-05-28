@@ -3,17 +3,24 @@ const User = require('./models/User');
 const Device = require('./models/Device');
 const AlarmRecord = require('./models/AlarmRecord');
 const Video = require('./models/Video');
+const bcrypt = require('bcrypt');
 
 async function initDatabase() {
   try {
+    // 检查是否需要强制重建表
+    const force = process.argv.includes('--force');
+    if (force) {
+      console.log('警告: 将删除所有现有数据并重建表');
+    }
+
     // 同步所有模型到数据库
-    await sequelize.sync({ force: true });
+    await sequelize.sync({ force });
     console.log('数据库表创建成功');
 
     // 创建测试用户
     const testUser = await User.create({
       username: 'testuser',
-      password_hash: '$2a$10$X7UrH5YxX5YxX5YxX5YxX.5YxX5YxX5YxX5YxX5YxX5YxX5YxX', // 密码: test123
+      password_hash: await bcrypt.hash('test123', 10),
       name: 'Test User',
       contact_info: 'test@example.com'
     });
@@ -37,6 +44,30 @@ async function initDatabase() {
     });
     console.log('测试设备创建成功:', testDevice.device_id);
 
+    // 创建测试告警记录
+    const testAlarm = await AlarmRecord.create({
+      device_id: testDevice.device_id,
+      user_id: testUser.user_id,
+      event_type: 'fall',
+      event_time: new Date(),
+      confidence: 0.95,
+      handled: false,
+      alarm_message: '检测到跌倒事件'
+    });
+    console.log('测试告警记录创建成功:', testAlarm.alarm_id);
+
+    // 创建测试视频记录
+    const testVideo = await Video.create({
+      device_id: testDevice.device_id,
+      alarm_id: testAlarm.alarm_id,
+      start_time: new Date(),
+      duration: 30,
+      file_path: '/videos/test.mp4',
+      file_size: 1024000,
+      format: 'mp4'
+    });
+    console.log('测试视频记录创建成功:', testVideo.video_id);
+
     console.log('数据库初始化完成');
     process.exit(0);
   } catch (error) {
@@ -45,4 +76,9 @@ async function initDatabase() {
   }
 }
 
-initDatabase(); 
+// 检查是否直接运行此脚本
+if (require.main === module) {
+  initDatabase();
+} else {
+  module.exports = initDatabase;
+} 

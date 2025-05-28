@@ -1,25 +1,28 @@
 const { Router } = require('express');
 const router = Router();
 const { authenticate } = require('../../middleware/auth');
-const db = require('../../db');
+const { User } = require('../../db/models');
 
 // Get current user info
 router.get('/me', authenticate, async (req, res) => {
   try {
-    const user = await db.query(
-      'SELECT user_id, username, name, contact_info FROM users WHERE user_id = $1',
-      [req.user.userId]
-    );
+    const user = await User.findOne({
+      where: { user_id: req.user.userId },
+      attributes: ['user_id', 'username', 'name', 'contact_info']
+    });
 
-    if (user.rows.length === 0) {
+    if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
     res.json({
-      id: user.rows[0].user_id,
-      username: user.rows[0].username,
-      name: user.rows[0].name,
-      contact_info: user.rows[0].contact_info
+      success: true,
+      data: {
+        id: user.user_id,
+        username: user.username,
+        name: user.name,
+        contact_info: user.contact_info
+      }
     });
   } catch (err) {
     console.error('Get user info error:', err);

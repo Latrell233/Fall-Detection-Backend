@@ -1,7 +1,6 @@
 const jwt = require('jsonwebtoken');
 const config = require('../../config/config');
-const db = require('../db');
-const Device = require('../db/models/Device');
+const { Device, AlarmRecord, Video } = require('../db/models');
 const { validateDeviceOwnership } = require('../middleware/deviceAuth');
 
 const deviceController = {
@@ -21,12 +20,12 @@ const deviceController = {
 
       res.json({
         device_id: device.device_id,
-        device_name: device.device_name || 'Unknown Device',
-        install_location: device.install_location || 'Unknown Location',
-        status: device.status || 'offline',
-        last_active: device.last_active || new Date().toISOString(),
-        model_version: device.model_version || 'v1.0',
-        config: device.config_json || {}
+        device_name: device.device_name,
+        install_location: device.install_location,
+        status: device.status,
+        last_active: device.last_active,
+        model_version: device.model_version,
+        config: device.config_json
       });
     } catch (err) {
       console.error('Get device error:', err);
@@ -47,18 +46,28 @@ const deviceController = {
       await validateDeviceOwnership(userId, device_id);
 
       // Update device status
-      const updatedDevice = await db.query(
-        `UPDATE devices SET status = $1, last_active = NOW() 
-         WHERE device_id = $2 AND user_id = $3
-         RETURNING device_id, device_name, status, last_active`,
-        [status, device_id, userId]
-      );
+      const device = await Device.findOne({
+        where: {
+          device_id,
+          user_id: userId
+        }
+      });
 
-      if (updatedDevice.rows.length === 0) {
+      if (!device) {
         return res.status(404).json({ error: 'Device not found' });
       }
 
-      res.json(updatedDevice.rows[0]);
+      await device.update({
+        status,
+        last_active: new Date()
+      });
+
+      res.json({
+        device_id: device.device_id,
+        device_name: device.device_name,
+        status: device.status,
+        last_active: device.last_active
+      });
     } catch (err) {
       console.error('Update device status error:', err);
       res.status(500).json({ error: 'Failed to update device status' });
@@ -69,14 +78,19 @@ const deviceController = {
     try {
       const { userId } = req.user;
 
-      // Get all user's devices
-      const devices = await db.query(
-        `SELECT device_id, device_name, install_location, status, last_active, model_version 
-         FROM devices WHERE user_id = $1`,
-        [userId]
-      );
+      const devices = await Device.findAll({
+        where: { user_id: userId },
+        attributes: [
+          'device_id',
+          'device_name',
+          'install_location',
+          'status',
+          'last_active',
+          'model_version'
+        ]
+      });
 
-      res.json(devices.rows);
+      res.json(devices);
     } catch (err) {
       console.error('List devices error:', err);
       res.status(500).json({ error: 'Failed to list devices' });
@@ -91,13 +105,14 @@ const deviceController = {
       // Verify device ownership
       await validateDeviceOwnership(userId, device_id);
 
-      // Delete device
-      const result = await db.query(
-        'DELETE FROM devices WHERE device_id = $1 AND user_id = $2',
-        [device_id, userId]
-      );
+      const result = await Device.destroy({
+        where: {
+          device_id,
+          user_id: userId
+        }
+      });
 
-      if (result.rowCount === 0) {
+      if (result === 0) {
         return res.status(404).json({ error: 'Device not found' });
       }
 
@@ -119,9 +134,10 @@ const deviceController = {
         return res.status(404).json({ error: 'Device not found' });
       }
 
-      device.status = status || 'online';
-      device.last_active = timestamp || new Date();
-      await device.save();
+      await device.update({
+        status: status || 'online',
+        last_active: timestamp || new Date()
+      });
 
       res.json({ received: true });
     } catch (err) {
@@ -166,8 +182,9 @@ const deviceController = {
         return res.status(400).json({ error: 'Device already bound to another user' });
       } else {
         try {
-          device.user_id = userId;
-          await device.save();
+          await device.update({
+            user_id: userId
+          });
         } catch (saveError) {
           console.error('Save device error:', saveError);
           return res.status(500).json({ 
@@ -213,8 +230,9 @@ const deviceController = {
         return res.status(404).json({ error: 'Device not found' });
       }
 
-      device.user_id = null;
-      await device.save();
+      await device.update({
+        user_id: null
+      });
 
       res.json({ success: true });
     } catch (err) {
@@ -228,30 +246,31 @@ const deviceController = {
       const { device_id, device_secret, device_name, model_version } = req.body;
       
       // 检查设备是否已存在
-      const existingDevice = await db.query(
-        'SELECT * FROM devices WHERE device_id = $1',
-        [device_id]
-      );
+      const existingDevice = await Device.findOne({
+        where: { device_id }
+      });
 
-      if (existingDevice.rows.length > 0) {
+      if (existingDevice) {
         return res.status(400).json({ error: 'Device already exists' });
       }
 
       // 创建新设备
-      const newDevice = await db.query(
-        `INSERT INTO devices (
-          device_id, device_secret, device_name, model_version,
-          status, created_at, updated_at, last_active
-        ) VALUES ($1, $2, $3, $4, 'offline', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-        RETURNING *`,
-        [device_id, device_secret, device_name, model_version]
-      );
+      const newDevice = await Device.create({
+        device_id,
+        device_secret,
+        device_name,
+        model_version,
+        status: 'offline',
+        user_id: null,
+        install_location: '未设置',
+        config_json: {}
+      });
 
       res.status(201).json({
-        device_id: newDevice.rows[0].device_id,
-        device_name: newDevice.rows[0].device_name,
-        model_version: newDevice.rows[0].model_version,
-        status: newDevice.rows[0].status
+        device_id: newDevice.device_id,
+        device_name: newDevice.device_name,
+        model_version: newDevice.model_version,
+        status: newDevice.status
       });
     } catch (err) {
       console.error('Register device error:', err);
@@ -262,30 +281,31 @@ const deviceController = {
   // 设备事件上报
   async reportEvent(req, res) {
     try {
-      const { device_id, event_type, timestamp, confidence, image_file, video_file } = req.body;
+      const { device_id, event_type, event_time, confidence, image_path, video_path, alarm_message } = req.body;
+      
+      const device = await Device.findOne({
+        where: { device_id }
+      });
 
-      // 检查设备是否存在
-      const device = await db.query(
-        'SELECT * FROM devices WHERE device_id = $1',
-        [device_id]
-      );
-
-      if (device.rows.length === 0) {
+      if (!device) {
         return res.status(404).json({ error: 'Device not found' });
       }
 
-      // 创建告警记录
-      const result = await db.query(
-        `INSERT INTO alarm_records 
-        (device_id, alarm_type, alarm_time, confidence, video_url, status, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-        RETURNING *`,
-        [device_id, event_type, timestamp, confidence, video_file, 'pending']
-      );
+      const alarm = await AlarmRecord.create({
+        device_id,
+        user_id: device.user_id,
+        event_type,
+        event_time: event_time || new Date(),
+        confidence,
+        image_path,
+        video_path,
+        alarm_message,
+        handled: false
+      });
 
       res.json({
         success: true,
-        data: result.rows[0]
+        data: alarm
       });
     } catch (err) {
       console.error('Report event error:', err);

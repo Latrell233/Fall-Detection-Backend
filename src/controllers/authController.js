@@ -1,7 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const config = require('../../config/config');
-const db = require('../db');
+const { User } = require('../db/models');
 const { sendResetEmail } = require('../services/emailService');
 
 const saltRounds = 10;
@@ -28,12 +28,11 @@ module.exports = {
       console.log('Registration attempt:', { username, name, contact_info });
       
       // Check if user already exists
-      const userExists = await db.query(
-        'SELECT user_id FROM users WHERE username = $1', 
-        [username]
-      );
+      const userExists = await User.findOne({
+        where: { username }
+      });
       
-      if (userExists.rows.length > 0) {
+      if (userExists) {
         console.log('User already exists:', username);
         return res.status(400).json({ error: 'User already exists' });
       }
@@ -44,15 +43,17 @@ module.exports = {
 
       // Create new user
       console.log('Attempting to create new user...');
-      const newUser = await db.query(
-        'INSERT INTO users (username, password_hash, name, contact_info, created_at, updated_at) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) RETURNING user_id',
-        [username, hashedPassword, name, contact_info]
-      );
-      console.log('User created successfully:', newUser.rows[0]);
+      const newUser = await User.create({
+        username,
+        password_hash: hashedPassword,
+        name,
+        contact_info
+      });
+      console.log('User created successfully:', newUser.user_id);
 
       res.status(201).json({
         success: true,
-        user_id: newUser.rows[0].user_id
+        user_id: newUser.user_id
       });
     } catch (err) {
       console.error('Registration error details:', {
@@ -75,12 +76,12 @@ module.exports = {
       console.log('Login attempt:', { username });
 
       // Get user from database
-      const user = await db.query(
-        'SELECT user_id, username, password_hash, name, contact_info FROM users WHERE username = $1', 
-        [username]
-      );
+      const user = await User.findOne({
+        where: { username },
+        attributes: ['user_id', 'username', 'password_hash', 'name', 'contact_info']
+      });
 
-      if (user.rows.length === 0) {
+      if (!user) {
         console.log('User not found:', username);
         return res.status(401).json({ error: 'Invalid credentials' });
       }
@@ -88,7 +89,7 @@ module.exports = {
       // Verify password
       const isValidPassword = await bcrypt.compare(
         password, 
-        user.rows[0].password_hash
+        user.password_hash
       );
 
       if (!isValidPassword) {
@@ -99,16 +100,19 @@ module.exports = {
       console.log('Login successful for user:', username);
 
       // Generate tokens
-      const tokens = generateTokens(user.rows[0].user_id);
+      const tokens = generateTokens(user.user_id);
 
       res.json({
-        user: {
-          id: user.rows[0].user_id,
-          username: user.rows[0].username,
-          name: user.rows[0].name,
-          contact_info: user.rows[0].contact_info
-        },
-        ...tokens
+        success: true,
+        data: {
+          user: {
+            id: user.user_id,
+            username: user.username,
+            name: user.name,
+            contact_info: user.contact_info
+          },
+          ...tokens
+        }
       });
     } catch (err) {
       console.error('Login error details:', {
@@ -139,7 +143,10 @@ module.exports = {
         { expiresIn: '15m' }
       );
 
-      res.json({ accessToken });
+      res.json({ 
+        success: true,
+        data: { accessToken }
+      });
     } catch (err) {
       console.error('Token refresh error details:', {
         message: err.message,
@@ -158,34 +165,34 @@ module.exports = {
       console.log('Password reset request for user:', username);
 
       // Check if user exists
-      const user = await db.query(
-        'SELECT user_id, username, contact_info FROM users WHERE username = $1', 
-        [username]
-      );
+      const user = await User.findOne({
+        where: { username },
+        attributes: ['user_id', 'username', 'contact_info']
+      });
 
-      if (user.rows.length === 0) {
+      if (!user) {
         console.log('User not found for password reset:', username);
         return res.status(404).json({ error: 'User not found' });
       }
 
       // Generate reset token
       const resetToken = jwt.sign(
-        { userId: user.rows[0].user_id }, 
+        { userId: user.user_id }, 
         config.server.jwtSecret, 
         { expiresIn: '1h' }
       );
 
       // Save reset token to database
-      await db.query(
-        'UPDATE users SET reset_token = $1 WHERE user_id = $2',
-        [resetToken, user.rows[0].user_id]
-      );
+      await user.update({ reset_token: resetToken });
 
       // Send reset email
-      await sendResetEmail(user.rows[0].contact_info, resetToken);
-      console.log('Password reset email sent to:', user.rows[0].contact_info);
+      await sendResetEmail(user.contact_info, resetToken);
+      console.log('Password reset email sent to:', user.contact_info);
 
-      res.json({ message: 'Password reset email sent' });
+      res.json({ 
+        success: true,
+        message: 'Password reset email sent' 
+      });
     } catch (err) {
       console.error('Password reset request error details:', {
         message: err.message,
@@ -214,13 +221,21 @@ module.exports = {
       const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
 
       // Update password and clear reset token
-      await db.query(
-        'UPDATE users SET password_hash = $1, reset_token = NULL WHERE user_id = $2',
-        [hashedPassword, decoded.userId]
+      await User.update(
+        {
+          password_hash: hashedPassword,
+          reset_token: null
+        },
+        {
+          where: { user_id: decoded.userId }
+        }
       );
       console.log('Password reset successful for user ID:', decoded.userId);
 
-      res.json({ message: 'Password reset successful' });
+      res.json({ 
+        success: true,
+        message: 'Password reset successful' 
+      });
     } catch (err) {
       console.error('Password reset error details:', {
         message: err.message,

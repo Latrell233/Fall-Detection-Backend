@@ -1,16 +1,18 @@
 const jwt = require('jsonwebtoken');
 const config = require('../../config/config');
-const db = require('../db');
+const { Device } = require('../db/models');
 
 module.exports = {
   async validateDeviceOwnership(userId, device_id) {
     try {
-      const device = await db.query(
-        'SELECT device_id FROM devices WHERE device_id = $1 AND user_id = $2',
-        [device_id, userId]
-      );
+      const device = await Device.findOne({
+        where: {
+          device_id,
+          user_id: userId
+        }
+      });
 
-      if (device.rows.length === 0) {
+      if (!device) {
         throw new Error('Device not found or access denied');
       }
     } catch (err) {

@@ -2,12 +2,13 @@ version: '3.8'
 
 services:
   db:
-    image: postgres:13
+    image: postgres:13-alpine
     container_name: fall_detection_db
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: fall_detection
+      TZ: Asia/Shanghai
     ports:
       - "5432:5432"
     volumes:
@@ -17,6 +18,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   backend:
     build: .
@@ -24,15 +26,21 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      emqx:
+        condition: service_healthy
     environment:
       DB_HOST: db
       DB_PORT: 5432
       DB_USER: postgres
       DB_PASSWORD: postgres
       DB_NAME: fall_detection
+      DB_SSL: "false"
       JWT_SECRET: your_secure_jwt_secret_key_here
+      JWT_REFRESH_SECRET: your_secure_refresh_secret_key_here
       MQTT_BROKER: mqtt://emqx:1883
       NODE_ENV: development
+      CORS_ORIGIN: "*"
+      UPLOAD_DIR: uploads
     ports:
       - "3000:3000"
     volumes:
@@ -42,9 +50,18 @@ services:
       - type: bind
         source: ./config
         target: /usr/src/app/config
+      - type: bind
+        source: ./uploads
+        target: /usr/src/app/uploads
       - type: volume
         source: node_modules
         target: /usr/src/app/node_modules
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     restart: unless-stopped
 
   emqx:
@@ -58,6 +75,8 @@ services:
       - "18083:18083"  # Dashboard
     environment:
       EMQX_LOG__LEVEL: warning
+      EMQX_DASHBOARD__DEFAULT_USERNAME: admin
+      EMQX_DASHBOARD__DEFAULT_PASSWORD: public
     volumes:
       - emqx_data:/opt/emqx/data
     healthcheck:
@@ -65,6 +84,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
 volumes:
   postgres_data:

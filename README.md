@@ -1,159 +1,149 @@
-# Fall Detection System - Backend
+# 跌倒检测系统后端服务
 
-## Overview
-Backend service for Fall Detection System with:
-- RESTful API endpoints
-- JWT authentication
-- PostgreSQL database
-- MQTT real-time communication
-- Docker containerization
+## 项目简介
+这是一个基于Node.js和Express的跌倒检测系统后端服务，提供设备管理、告警处理、用户认证等功能。系统采用RESTful API设计，支持嵌入式设备和移动端应用的数据交互。
 
-## System Architecture
-![Architecture Diagram](docs/architecture.png)
+## 功能特性
+- 设备管理：设备注册、心跳检测、状态监控
+- 告警处理：跌倒检测、异常行为识别、告警确认
+- 用户认证：JWT认证、密码重置、Token刷新
+- 视频管理：视频存储、回放、下载
+- 健康检查：服务状态监控、容器健康检查
 
-## Prerequisites
-- Docker 20.10+
-- Docker Compose 1.29+
-- Node.js 16+ (for local development)
+## 技术栈
+- 运行环境：Node.js
+- Web框架：Express
+- 数据库：PostgreSQL
+- ORM：Sequelize
+- 消息队列：MQTT (EMQX)
+- 容器化：Docker
+- 认证：JWT
+- 文件存储：本地文件系统
 
-## Installation
+## 项目结构
+```
+backend/
+├── src/                    # 源代码目录
+│   ├── controllers/        # 控制器
+│   ├── routes/            # 路由
+│   ├── db/                # 数据库模型和迁移
+│   ├── middleware/        # 中间件
+│   ├── services/          # 服务
+│   ├── validation/        # 数据验证
+│   ├── app.js            # 应用入口
+│   └── db.js             # 数据库配置
+├── config/                # 配置文件目录
+├── node_modules/          # 依赖包目录
+├── API_DOCUMENTATION.md   # API文档
+├── 数据库表结构.md         # 数据库设计文档
+├── Dockerfile            # Docker构建文件
+├── docker-compose.yml    # Docker编排配置
+├── package.json         # 项目依赖配置
+├── package-lock.json    # 依赖版本锁定文件
+├── jest.config.js       # Jest测试配置
+└── README.md            # 项目说明文档
+```
 
-### With Docker (Recommended)
+## 快速开始
+
+### 环境要求
+- Node.js >= 14
+- PostgreSQL >= 13
+- Docker & Docker Compose
+
+### 安装步骤
+1. 克隆项目
 ```bash
-# 1. Clone repository
-git clone <repository-url>
-
-# 2. Navigate to backend
+git clone [项目地址]
 cd backend
-
-# 3. Configure environment
-cp .env.example .env
-# Edit .env with your values
-
-# 4. Build and start services
-docker-compose up -d --build
-
-# 5. Initialize database
-docker-compose exec backend node src/db/init.js
 ```
 
-### Local Development
+2. 安装依赖
 ```bash
-# 1. Install PostgreSQL
-sudo apt install postgresql
-
-# 2. Create database
-createdb -U postgres fall_detection_dev
-
-# 3. Install dependencies
 npm install
+```
 
-# 4. Configure environment
+3. 配置环境变量
+```bash
 cp .env.example .env
-# Set DB_TYPE=postgres and other local values
+# 编辑.env文件，配置必要的环境变量
+```
 
-# 5. Start server
+4. 启动服务
+```bash
+# 开发环境
 npm run dev
+
+# 生产环境
+docker-compose up -d
 ```
 
-## Testing Setup
-
-### PostgreSQL Testing
+### 数据库初始化
 ```bash
-# 1. Start database service
-docker-compose up -d db
-
-# 2. Create test database
-createdb -U postgres fall_detection_test
-
-# 3. Configure test environment
-echo "DB_TYPE=postgres
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=postgres
-DB_PASSWORD=postgres
-DB_NAME=fall_detection_test
-JWT_SECRET=test_secret
-MQTT_BROKER=mqtt://localhost:1883" > .env.test
-
-# 4. Run tests
-npm test
+npm run db:migrate
+npm run db:seed
 ```
 
-### Using SQLite for Testing (Alternative)
+## 部署说明
+
+### Docker部署
+1. 构建镜像
 ```bash
-# 1. Configure SQLite test env
-echo "DB_TYPE=sqlite
-DB_NAME=test.db" > .env.test
+docker build -t fall-detection-backend .
+```
 
-# 2. Create test database file
-touch test.db
+2. 启动服务
+```bash
+docker-compose up -d
+```
 
-# 3. Run tests
+### 环境变量配置
+- `DB_HOST`: 数据库主机
+- `DB_PORT`: 数据库端口
+- `DB_USER`: 数据库用户名
+- `DB_PASSWORD`: 数据库密码
+- `JWT_SECRET`: JWT密钥
+- `MQTT_BROKER`: MQTT服务器地址
+- `UPLOAD_DIR`: 文件上传目录
+
+## 监控与维护
+
+### 健康检查
+- 端点：`GET /health`
+- 用途：服务状态监控、容器健康检查
+- 响应：`{ "status": "OK" }`
+
+### 日志管理
+- 访问日志：记录API请求
+- 错误日志：记录系统错误
+- 设备日志：记录设备活动
+
+## 安全说明
+- 所有API请求需要认证（除健康检查外）
+- 密码使用bcrypt加密存储
+- 使用JWT进行身份验证
+- 文件上传限制大小和类型
+- CORS配置限制跨域请求
+
+## 测试
+```bash
+# 运行单元测试
 npm test
+
+# 运行集成测试
+npm run test:integration
 ```
 
-## Docker Configuration
-```yaml
-# docker-compose.yml
-version: '3.8'
+## 文档
+- API文档：`API_DOCUMENTATION.md`
+- 数据库结构：`数据库表结构.md`
 
-services:
-  db:
-    image: postgres:13
-    container_name: fall_detection_db
-    environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+## 贡献指南
+1. Fork 项目
+2. 创建特性分支
+3. 提交更改
+4. 推送到分支
+5. 创建Pull Request
 
-  backend:
-    build: .
-    container_name: fall_detection_backend
-    depends_on:
-      db:
-        condition: service_healthy
-    environment:
-      - NODE_ENV=production
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
-      - JWT_SECRET=${JWT_SECRET}
-      - MQTT_BROKER=mqtt://emqx:1883
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./src:/usr/src/app/src
-      - ./config:/usr/src/app/config
-
-  emqx:
-    image: emqx:5
-    container_name: fall_detection_emqx
-    ports:
-      - "1883:1883"  # MQTT
-      - "8083:8083"  # MQTT over WS
-      - "18083:18083" # Dashboard
-
-volumes:
-  postgres_data:
-```
-
-## API Documentation
-Access Swagger UI after starting services:
-```
-http://localhost:3000/api-docs
-```
-
-## License
+## 许可证
 MIT

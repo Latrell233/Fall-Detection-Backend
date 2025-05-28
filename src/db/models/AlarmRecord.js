@@ -3,36 +3,52 @@ const sequelize = require('../index');
 
 const AlarmRecord = sequelize.define('AlarmRecord', {
   alarm_id: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.BIGINT,
     primaryKey: true,
     autoIncrement: true
   },
   device_id: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(50),
     allowNull: false,
     references: {
       model: 'devices',
       key: 'device_id'
     }
   },
-  alarm_time: {
+  user_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'user_id'
+    }
+  },
+  event_type: {
+    type: DataTypes.STRING(20),
+    allowNull: false
+  },
+  event_time: {
     type: DataTypes.DATE,
     allowNull: false
   },
-  alarm_type: {
-    type: DataTypes.ENUM('fall', 'abnormal', 'other'),
-    allowNull: false
+  image_path: {
+    type: DataTypes.STRING(255),
+    allowNull: true
+  },
+  video_path: {
+    type: DataTypes.STRING(255),
+    allowNull: true
   },
   confidence: {
     type: DataTypes.FLOAT,
-    allowNull: false
+    allowNull: true
   },
-  status: {
-    type: DataTypes.ENUM('pending', 'confirmed', 'false_alarm'),
-    defaultValue: 'pending'
+  handled: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   },
-  video_url: {
-    type: DataTypes.STRING,
+  alarm_message: {
+    type: DataTypes.STRING(255),
     allowNull: true
   },
   created_at: {

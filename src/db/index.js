@@ -8,7 +8,20 @@ const sequelize = new Sequelize(
     host: process.env.DB_HOST || 'db',
     port: process.env.DB_PORT || 5432,
     dialect: 'postgres',
-    logging: false,
+    logging: process.env.NODE_ENV === 'development' ? console.log : false,
+    timezone: '+08:00',  // 设置时区为东八区
+    define: {
+      charset: 'utf8mb4',
+      collate: 'utf8mb4_unicode_ci',
+      timestamps: true,
+      underscored: true
+    },
+    dialectOptions: {
+      ssl: process.env.DB_SSL === 'true' ? {
+        require: true,
+        rejectUnauthorized: false
+      } : false
+    },
     pool: {
       max: 5,
       min: 0,
@@ -17,5 +30,14 @@ const sequelize = new Sequelize(
     }
   }
 );
+
+// 测试数据库连接
+sequelize.authenticate()
+  .then(() => {
+    console.log('数据库连接成功');
+  })
+  .catch(err => {
+    console.error('数据库连接失败:', err);
+  });
 
 module.exports = sequelize; 

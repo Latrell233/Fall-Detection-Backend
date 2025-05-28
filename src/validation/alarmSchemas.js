@@ -1,11 +1,11 @@
 const Joi = require('joi');
 
 const getAlarmsSchema = Joi.object({
-  limit: Joi.number().integer().min(1).max(100).default(20),
-  offset: Joi.number().integer().min(0).default(0),
-  handled: Joi.boolean(),
-  start_time: Joi.date().iso(),
-  end_time: Joi.date().iso().min(Joi.ref('start_time'))
+  from: Joi.date().iso(),
+  to: Joi.date().iso().min(Joi.ref('from')),
+  status: Joi.string().valid('handled', 'unhandled'),
+  device_id: Joi.string(),
+  minConfidence: Joi.number().min(0).max(1)
 });
 
 const getAlarmDetailSchema = Joi.object({
@@ -13,11 +13,22 @@ const getAlarmDetailSchema = Joi.object({
 });
 
 const acknowledgeAlarmSchema = Joi.object({
-  alarmId: Joi.string().required()
+  action: Joi.string().valid('confirm', 'dismiss').required().messages({
+    'any.only': 'Action must be either confirm or dismiss',
+    'any.required': 'Action is required'
+  }),
+  message: Joi.string().max(255)
+});
+
+const getAlarmStatsSchema = Joi.object({
+  from: Joi.date().iso(),
+  to: Joi.date().iso().min(Joi.ref('from')),
+  device_id: Joi.string()
 });
 
 module.exports = {
   getAlarmsSchema,
   getAlarmDetailSchema,
-  acknowledgeAlarmSchema
+  acknowledgeAlarmSchema,
+  getAlarmStatsSchema
 }; 

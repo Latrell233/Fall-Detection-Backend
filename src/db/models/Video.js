@@ -3,41 +3,45 @@ const sequelize = require('../index');
 
 const Video = sequelize.define('Video', {
   video_id: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.BIGINT,
     primaryKey: true,
     autoIncrement: true
   },
-  device_id: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    references: {
-      model: 'devices',
-      key: 'device_id'
-    }
-  },
   alarm_id: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.BIGINT,
     allowNull: true,
     references: {
       model: 'alarm_records',
       key: 'alarm_id'
     }
   },
-  video_url: {
-    type: DataTypes.STRING,
-    allowNull: false
+  device_id: {
+    type: DataTypes.STRING(50),
+    allowNull: false,
+    references: {
+      model: 'devices',
+      key: 'device_id'
+    }
   },
   start_time: {
-    type: DataTypes.DATE,
-    allowNull: false
-  },
-  end_time: {
     type: DataTypes.DATE,
     allowNull: false
   },
   duration: {
     type: DataTypes.INTEGER,
     allowNull: false
+  },
+  file_path: {
+    type: DataTypes.STRING(255),
+    allowNull: false
+  },
+  file_size: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
+  format: {
+    type: DataTypes.STRING(50),
+    allowNull: true
   },
   created_at: {
     type: DataTypes.DATE,

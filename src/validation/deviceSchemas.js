@@ -23,15 +23,17 @@ const registerDeviceSchema = Joi.object({
 });
 
 const updateDeviceSchema = Joi.object({
-  status: Joi.string().valid('online', 'offline', 'alerting').required().messages({
-    'any.only': 'Status must be one of: online, offline, alerting',
+  status: Joi.string().valid('online', 'offline').required().messages({
+    'any.only': 'Status must be one of: online, offline',
     'any.required': 'Status is required'
   })
 });
 
 const bindDeviceSchema = Joi.object({
   device_id: Joi.string().required().max(50),
-  device_secret: Joi.string().required().max(100)
+  device_secret: Joi.string().required().max(100),
+  device_name: Joi.string().required().max(100),
+  model_version: Joi.string().required().max(50)
 });
 
 const unbindDeviceSchema = Joi.object({
@@ -43,12 +45,13 @@ const getDeviceSchema = Joi.object({
 });
 
 const reportEventSchema = Joi.object({
-  device_id: Joi.string().required(),
+  device_id: Joi.string().required().max(50),
   event_type: Joi.string().valid('fall', 'abnormal', 'other').required(),
-  timestamp: Joi.date().iso().required(),
+  event_time: Joi.date().iso().required(),
   confidence: Joi.number().min(0).max(1).required(),
-  image_file: Joi.string().allow(null),
-  video_file: Joi.string().allow(null)
+  image_path: Joi.string().max(255).allow(null),
+  video_path: Joi.string().max(255).allow(null),
+  alarm_message: Joi.string().max(255).allow(null)
 });
 
 module.exports = {
