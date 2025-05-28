@@ -1,7 +1,7 @@
-const { Router } = require('express');
-const router = Router();
+const express = require('express');
+const router = express.Router();
 const { authenticate } = require('../../middleware/auth');
-const { User } = require('../../db/models');
+const { User } = require('../../db');
 
 // Get current user info
 router.get('/me', authenticate, async (req, res) => {

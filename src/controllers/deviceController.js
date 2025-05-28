@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const config = require('../../config/config');
-const { Device, AlarmRecord, Video } = require('../db/models');
+const { Device, AlarmRecord, Video } = require('../db');
 const { validateDeviceOwnership } = require('../middleware/deviceAuth');
 
 const deviceController = {

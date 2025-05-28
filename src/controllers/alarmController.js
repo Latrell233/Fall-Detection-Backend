@@ -1,5 +1,5 @@
 const db = require('../db');
-const { AlarmRecord, Device, Video } = require('../db/models');
+const { AlarmRecord, Device, Video } = require('../db');
 const { Op } = require('sequelize');
 
 module.exports = {

@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const config = require('../../config/config');
-const { Device } = require('../db/models');
+const { Device } = require('../db');
 
 module.exports = {
   async validateDeviceOwnership(userId, device_id) {
