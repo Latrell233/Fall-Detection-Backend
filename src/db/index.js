@@ -31,6 +31,25 @@ const sequelize = new Sequelize(
   }
 );
 
+// 导入模型
+const User = require('./models/User');
+const Device = require('./models/Device');
+const AlarmRecord = require('./models/AlarmRecord');
+const Video = require('./models/Video');
+
+// 定义模型关联
+User.hasMany(Device, { foreignKey: 'user_id' });
+Device.belongsTo(User, { foreignKey: 'user_id' });
+
+Device.hasMany(AlarmRecord, { foreignKey: 'device_id' });
+AlarmRecord.belongsTo(Device, { foreignKey: 'device_id' });
+
+User.hasMany(AlarmRecord, { foreignKey: 'user_id' });
+AlarmRecord.belongsTo(User, { foreignKey: 'user_id' });
+
+AlarmRecord.hasMany(Video, { foreignKey: 'alarm_id' });
+Video.belongsTo(AlarmRecord, { foreignKey: 'alarm_id' });
+
 // 测试数据库连接
 sequelize.authenticate()
   .then(() => {
@@ -40,4 +59,11 @@ sequelize.authenticate()
     console.error('数据库连接失败:', err);
   });
 
-module.exports = sequelize; 
+// 导出模型
+module.exports = {
+  sequelize,
+  User,
+  Device,
+  AlarmRecord,
+  Video
+}; 

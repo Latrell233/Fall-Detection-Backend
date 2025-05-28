@@ -148,18 +148,14 @@ Content-Type: application/json
 响应：
 {
   "success": true,
-  "data": {
-    "user_id": 1,
-    "username": "user123",
-    "name": "User Name",
-    "contact_info": "user@example.com"
-  }
+  "user_id": 1
 }
 
 错误响应：
 {
   "error": "Registration failed",
-  "details": "Username already exists"
+  "details": "Username already exists",
+  "code": "23505"  // PostgreSQL唯一约束违反错误码
 }
 
 POST /api/v1/auth/login
@@ -176,7 +172,7 @@ Content-Type: application/json
   "success": true,
   "data": {
     "user": {
-      "user_id": 1,
+      "id": 1,
       "username": "user123",
       "name": "User Name",
       "contact_info": "user@example.com"
@@ -196,17 +192,21 @@ Content-Type: application/json
 
 请求体：
 {
-  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
 
 响应：
 {
   "success": true,
   "data": {
-    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "expires_in": 3600
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
   }
+}
+
+错误响应：
+{
+  "error": "Invalid refresh token",
+  "details": "Token has expired or is invalid"
 }
 
 POST /api/v1/auth/reset-password
@@ -214,7 +214,7 @@ Content-Type: application/json
 
 请求体：
 {
-  "contact_info": "user@example.com"
+  "username": "user123"
 }
 
 响应：
@@ -228,18 +228,18 @@ Content-Type: application/json
   "error": "User not found"
 }
 
-POST /api/v1/auth/reset-password/{token}
+POST /api/v1/auth/reset-password/:token
 Content-Type: application/json
 
 请求体：
 {
-  "password": "newpassword123"
+  "newPassword": "newpassword123"
 }
 
 响应：
 {
   "success": true,
-  "message": "Password reset successfully"
+  "message": "Password reset successful"
 }
 
 错误响应：

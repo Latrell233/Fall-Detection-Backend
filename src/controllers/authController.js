@@ -1,7 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const config = require('../../config/config');
-const { User } = require('../db/models');
+const { User } = require('../db');
 const { sendResetEmail } = require('../services/emailService');
 
 const saltRounds = 10;
