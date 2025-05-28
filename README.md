@@ -54,7 +54,7 @@ backend/
 ### 安装步骤
 1. 克隆项目
 ```bash
-git clone [项目地址]
+git clone https://github.com/Latrell233/Fall-Detection-Backend.git
 cd backend
 ```
 
@@ -80,8 +80,11 @@ docker-compose up -d
 
 ### 数据库初始化
 ```bash
-npm run db:migrate
-npm run db:seed
+# 初始化数据库（包含表结构和测试数据）
+node src/db/init.js
+
+# 如果需要强制重建表（会删除所有现有数据）
+node src/db/init.js --force
 ```
 
 ## 部署说明
