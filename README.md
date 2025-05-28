@@ -87,27 +87,158 @@ node src/db/init.js
 node src/db/init.js --force
 ```
 
+## 快速部署指南
+
+### 1. 克隆仓库
+```bash
+git clone https://github.com/Latrell233/Fall-Detection-Backend.git
+cd backend
+```
+
+### 2. 环境准备
+```bash
+# 创建必要的目录
+mkdir -p uploads logs
+
+# 配置环境变量
+cp .env.example .env
+# 编辑 .env 文件，设置必要的环境变量
+```
+
+### 3. 使用 Docker Compose 部署
+```bash
+# 启动所有服务
+docker-compose up -d
+
+# 等待服务启动完成（约30秒）
+# 检查服务状态
+docker-compose ps
+
+# 查看服务日志
+docker-compose logs -f
+```
+
+### 4. 初始化数据库
+```bash
+# 进入后端容器
+docker-compose exec backend sh
+
+# 运行数据库初始化脚本
+node src/db/init.js
+```
+
+### 5. 验证部署
+- 访问健康检查接口：http://localhost:3000/health
+- 访问 EMQX Dashboard：http://localhost:18083
+  - 用户名：admin
+  - 密码：public
+
+### 6. 常见问题处理
+1. 如果遇到权限问题：
+```bash
+# 检查目录权限
+ls -la uploads logs
+
+# 如果需要，修改权限
+chmod -R 755 uploads logs
+```
+
+2. 如果需要重新部署：
+```bash
+# 停止并删除所有容器和数据
+docker-compose down -v
+
+# 重新构建并启动
+docker-compose up -d --build
+```
+
+3. 如果需要查看日志：
+```bash
+# 查看所有服务的日志
+docker-compose logs -f
+
+# 只查看后端服务的日志
+docker-compose logs -f backend
+```
+
 ## 部署说明
 
 ### Docker部署
-1. 构建镜像
+1. 准备环境
 ```bash
-docker build -t fall-detection-backend .
+# 创建必要的目录
+mkdir -p uploads
+mkdir -p logs
+
+# 复制环境变量文件
+cp .env.example .env
+# 编辑 .env 文件，配置必要的环境变量
 ```
 
 2. 启动服务
 ```bash
+# 构建并启动所有服务
 docker-compose up -d
+
+# 查看服务状态
+docker-compose ps
+
+# 查看服务日志
+docker-compose logs -f
 ```
 
+3. 初始化数据库
+```bash
+# 进入后端容器
+docker-compose exec backend sh
+
+# 运行数据库初始化脚本
+node src/db/init.js
+```
+
+4. 访问服务
+- 后端API: http://localhost:3000
+- EMQX Dashboard: http://localhost:18083
+  - 用户名: admin
+  - 密码: public
+
+5. 停止服务
+```bash
+# 停止所有服务
+docker-compose down
+
+# 停止并删除所有数据（包括数据库数据）
+docker-compose down -v
+```
+
+### 部署注意事项
+1. Alibaba Cloud Linux 3 部署
+   - 使用基于 Debian 的 Node.js 镜像
+   - 确保系统已安装 Docker 和 Docker Compose
+   - 如果遇到权限问题，可能需要调整 SELinux 设置
+
+2. 系统要求
+   - Docker 版本 >= 20.10
+   - Docker Compose 版本 >= 2.0
+   - 至少 2GB 可用内存
+   - 至少 10GB 可用磁盘空间
+
+3. 性能优化
+   - 调整 Docker 守护进程配置
+   - 配置适当的日志轮转
+   - 设置合理的资源限制
+
 ### 环境变量配置
-- `DB_HOST`: 数据库主机
-- `DB_PORT`: 数据库端口
-- `DB_USER`: 数据库用户名
+- `DB_HOST`: 数据库主机（Docker环境使用 'db'）
+- `DB_PORT`: 数据库端口（默认 5432）
+- `DB_USER`: 数据库用户名（默认 postgres）
 - `DB_PASSWORD`: 数据库密码
 - `JWT_SECRET`: JWT密钥
-- `MQTT_BROKER`: MQTT服务器地址
-- `UPLOAD_DIR`: 文件上传目录
+- `JWT_REFRESH_SECRET`: JWT刷新密钥
+- `MQTT_BROKER`: MQTT服务器地址（Docker环境使用 'mqtt://emqx:1883'）
+- `UPLOAD_DIR`: 文件上传目录（默认 uploads）
+- `NODE_ENV`: 运行环境（development/production）
+- `CORS_ORIGIN`: 跨域设置（默认 "*"）
 
 ## 监控与维护
 

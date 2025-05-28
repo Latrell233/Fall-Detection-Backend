@@ -4,8 +4,8 @@
   "description": "Backend service for Fall Detection System",
   "main": "src/app.js",
   "scripts": {
-    "start": "NODE_PATH=./ node src/app.js", 
-    "dev": "NODE_PATH=./ nodemon src/app.js",
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js",
     "test": "jest --runInBand",
     "test:unit": "jest --runInBand tests/unit",
     "test:integration": "jest --runInBand tests/integration",

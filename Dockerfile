@@ -1,10 +1,13 @@
-FROM node:18-alpine
+FROM node:18
 
 # 设置工作目录
 WORKDIR /usr/src/app
 
 # 安装基础工具
-RUN apk add --no-cache curl
+RUN apt-get update && \
+    apt-get install -y curl && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # 设置环境变量
 ENV NODE_ENV=production
