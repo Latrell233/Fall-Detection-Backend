@@ -2,6 +2,7 @@
 
 # 服务器配置
 API_BASE_URL="http://localhost:3000"
+# API_BASE_URL="http://120.79.205.110"
 # 如果需要修改服务器地址，只需要修改上面的 API_BASE_URL 变量
 
 # 颜色输出

@@ -1,6 +1,8 @@
 const jwt = require('jsonwebtoken');
 const config = require('../../config/config');
 const { validateDeviceOwnership } = require('../middleware/deviceAuth');
+const { Op } = require('sequelize');
+const sequelize = require('sequelize');
 
 const deviceController = {
   async getDevice(req, res) {
@@ -233,10 +235,12 @@ const deviceController = {
 
   // 设备解绑
   async unbindDevice(req, res) {
+    const transaction = await sequelize.transaction();
+    
     try {
       const { device_id } = req.body;
       const userId = req.user.userId;
-      const { Device, AlarmRecord } = req.app.locals.db;
+      const { Device, AlarmRecord, Video } = req.app.locals.db;
 
       if (!device_id || !userId) {
         return res.status(400).json({ error: 'Missing required parameters' });
@@ -254,22 +258,35 @@ const deviceController = {
         return res.status(404).json({ error: 'Device not found' });
       }
 
-      // 先删除设备相关的所有报警记录
+      // 1. 先删除设备相关的所有视频记录
+      await Video.destroy({
+        where: {
+          alarm_id: {
+            [Op.in]: sequelize.literal(`(SELECT alarm_id FROM alarm_records WHERE device_id = '${device_id}' AND user_id = ${userId})`)
+          }
+        },
+        transaction
+      });
+
+      // 2. 删除设备相关的所有报警记录
       await AlarmRecord.destroy({
         where: {
           device_id,
           user_id: userId
-        }
+        },
+        transaction
       });
 
-      // 再删除设备
-      await device.destroy();
+      // 3. 最后删除设备
+      await device.destroy({ transaction });
 
+      await transaction.commit();
       res.json({
         success: true,
         message: 'Device unbound successfully'
       });
     } catch (error) {
+      await transaction.rollback();
       console.error('Unbind device error:', error);
       res.status(500).json({ error: 'Failed to unbind device' });
     }
