@@ -21,23 +21,19 @@ RUN mkdir -p /usr/src/app/uploads/temp \
     /usr/src/app/public/videos
 
 # 设置目录权限
-RUN chown -R node:node /usr/src/app && \
-    chmod -R 777 /usr/src/app
+RUN chmod -R 777 /usr/src/app
 
 # 复制 package.json 和 package-lock.json
-COPY --chown=node:node package*.json ./
+COPY package*.json ./
 
 # 安装依赖
 RUN npm install
 
 # 复制源代码
-COPY --chown=node:node . .
-
-# 使用非 root 用户运行
-USER node
+COPY . .
 
 # 健康检查
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=5 \
     CMD curl -f http://localhost:3000/health || exit 1
 
 # 暴露端口

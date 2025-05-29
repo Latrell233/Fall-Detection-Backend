@@ -38,9 +38,8 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./src:/usr/src/app/src
-      - ./uploads:/usr/src/app/uploads
-      - ./public:/usr/src/app/public
+      - uploads_data:/usr/src/app/uploads
+      - public_data:/usr/src/app/public
     command: npx nodemon src/app.js
     restart: unless-stopped
 
@@ -64,3 +63,5 @@ services:
 volumes:
   postgres_data:
   emqx_data:
+  uploads_data:
+  public_data:
