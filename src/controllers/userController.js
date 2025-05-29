@@ -33,6 +33,7 @@ const userController = {
   },
 
   async deleteCurrentUser(req, res) {
+    const sequelize = getSequelize();
     const transaction = await sequelize.transaction();
     
     try {
