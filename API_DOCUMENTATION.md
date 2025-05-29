@@ -128,6 +128,51 @@ Content-Type: application/json
   "error": "Device not found",
   "details": "The specified device does not exist or is not bound to your account"
 }
+
+### 5. 获取设备详情
+```
+GET /api/v1/devices/info
+Authorization: Bearer {access_token}
+Query参数：
+- device_id: 设备ID
+
+响应：
+{
+  "success": true,
+  "data": {
+    "device_id": "DEVICE_001",
+    "device_name": "客厅摄像头",
+    "status": "online",
+    "install_location": "老人房间",
+    "model_version": "v1.0",
+    "last_active": "2024-03-20T10:00:00Z",
+    "config_json": {}
+  }
+}
+
+错误响应：
+{
+  "error": "Device not found",
+  "details": "The specified device does not exist"
+}
+```
+
+### 6. 删除设备
+```
+DELETE /api/v1/devices/{deviceId}
+Authorization: Bearer {access_token}
+
+响应：
+{
+  "success": true,
+  "message": "Device deleted successfully"
+}
+
+错误响应：
+{
+  "error": "Device not found",
+  "details": "The specified device does not exist"
+}
 ```
 
 ## 二、移动端 API
@@ -408,6 +453,25 @@ Content-Type: application/json
 
 ### 4. 用户管理
 ```
+GET /api/v1/users/me
+Authorization: Bearer {access_token}
+
+响应：
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "username": "user123",
+    "name": "User Name",
+    "contact_info": "user@example.com"
+  }
+}
+
+错误响应：
+{
+  "error": "User not found",
+  "details": "The specified user does not exist"
+}
 ```
 
 ## 三、通用说明

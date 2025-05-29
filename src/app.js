@@ -21,14 +21,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// Database connection
-db.connect()
-  .then(() => console.log('Connected to database'))
-  .catch(err => console.error('Database connection error:', err));
-
-// Routes
-app.use('/api/v1', v1Routes);
-
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK' });
@@ -43,9 +35,30 @@ app.use((err, req, res, next) => {
   });
 });
 
-const PORT = config.server.port || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+// 初始化数据库并启动服务器
+async function startServer() {
+  try {
+    // 初始化数据库
+    const dbInstance = await db();
+    console.log('数据库初始化完成');
+
+    // 将数据库对象添加到 app 中，供路由使用
+    app.locals.db = dbInstance;
+
+    // 添加路由
+    app.use('/api/v1', v1Routes);
+
+    // 启动服务器
+    const PORT = config.server.port || 3000;
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  } catch (err) {
+    console.error('Failed to start server:', err);
+    process.exit(1);
+  }
+}
+
+startServer();
 
 module.exports = app;

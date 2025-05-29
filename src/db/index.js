@@ -1,5 +1,6 @@
 const { Sequelize } = require('sequelize');
 
+// 创建 Sequelize 实例
 const sequelize = new Sequelize(
   process.env.DB_NAME || 'fall_detection',
   process.env.DB_USER || 'postgres',
@@ -31,39 +32,58 @@ const sequelize = new Sequelize(
   }
 );
 
-// 导入模型
-const User = require('./models/User');
-const Device = require('./models/Device');
-const AlarmRecord = require('./models/AlarmRecord');
-const Video = require('./models/Video');
+// 导入模型定义
+const UserModel = require('./models/User');
+const DeviceModel = require('./models/Device');
+const AlarmRecordModel = require('./models/AlarmRecord');
+const VideoModel = require('./models/Video');
 
-// 定义模型关联
-User.hasMany(Device, { foreignKey: 'user_id' });
-Device.belongsTo(User, { foreignKey: 'user_id' });
+// 初始化模型
+let User, Device, AlarmRecord, Video;
 
-Device.hasMany(AlarmRecord, { foreignKey: 'device_id' });
-AlarmRecord.belongsTo(Device, { foreignKey: 'device_id' });
-
-User.hasMany(AlarmRecord, { foreignKey: 'user_id' });
-AlarmRecord.belongsTo(User, { foreignKey: 'user_id' });
-
-AlarmRecord.hasMany(Video, { foreignKey: 'alarm_id' });
-Video.belongsTo(AlarmRecord, { foreignKey: 'alarm_id' });
-
-// 测试数据库连接
-sequelize.authenticate()
-  .then(() => {
+// 数据库连接和初始化方法
+const initDatabase = async () => {
+  try {
+    // 连接数据库
+    await sequelize.authenticate();
     console.log('数据库连接成功');
-  })
-  .catch(err => {
-    console.error('数据库连接失败:', err);
-  });
 
-// 导出模型
-module.exports = {
-  sequelize,
-  User,
-  Device,
-  AlarmRecord,
-  Video
-}; 
+    // 初始化模型
+    User = UserModel(sequelize, Sequelize);
+    Device = DeviceModel(sequelize, Sequelize);
+    AlarmRecord = AlarmRecordModel(sequelize, Sequelize);
+    Video = VideoModel(sequelize, Sequelize);
+
+    // 定义模型关联
+    User.hasMany(Device, { foreignKey: 'user_id' });
+    Device.belongsTo(User, { foreignKey: 'user_id' });
+
+    Device.hasMany(AlarmRecord, { foreignKey: 'device_id' });
+    AlarmRecord.belongsTo(Device, { foreignKey: 'device_id' });
+
+    User.hasMany(AlarmRecord, { foreignKey: 'user_id' });
+    AlarmRecord.belongsTo(User, { foreignKey: 'user_id' });
+
+    AlarmRecord.hasMany(Video, { foreignKey: 'alarm_id' });
+    Video.belongsTo(AlarmRecord, { foreignKey: 'alarm_id' });
+
+    // 同步模型到数据库
+    await sequelize.sync();
+    console.log('数据库模型同步完成');
+
+    return {
+      sequelize,
+      Sequelize,
+      User,
+      Device,
+      AlarmRecord,
+      Video
+    };
+  } catch (err) {
+    console.error('数据库初始化失败:', err);
+    throw err;
+  }
+};
+
+// 导出初始化方法
+module.exports = initDatabase; 

@@ -1,12 +1,12 @@
 const jwt = require('jsonwebtoken');
 const config = require('../../config/config');
-const { Device, AlarmRecord, Video } = require('../db');
 const { validateDeviceOwnership } = require('../middleware/deviceAuth');
 
 const deviceController = {
   async getDevice(req, res) {
     try {
       const userId = req.user.userId;
+      const { Device } = req.app.locals.db;
       console.log('Getting device info for user:', userId);
 
       const device = await Device.findOne({
@@ -41,6 +41,7 @@ const deviceController = {
       const { userId } = req.user;
       const { device_id } = req.params;
       const { status } = req.body;
+      const { Device } = req.app.locals.db;
 
       // Verify device ownership
       await validateDeviceOwnership(userId, device_id);
@@ -77,6 +78,7 @@ const deviceController = {
   async listDevices(req, res) {
     try {
       const { userId } = req.user;
+      const { Device } = req.app.locals.db;
 
       const devices = await Device.findAll({
         where: { user_id: userId },
@@ -99,11 +101,16 @@ const deviceController = {
 
   async deleteDevice(req, res) {
     try {
-      const { userId } = req.user;
-      const { device_id } = req.params;
+      const userId = req.user.userId;
+      const device_id = req.params.deviceId;
+      const { Device } = req.app.locals.db;
+
+      if (!userId || !device_id) {
+        return res.status(400).json({ error: 'Missing required parameters' });
+      }
 
       // Verify device ownership
-      await validateDeviceOwnership(userId, device_id);
+      await validateDeviceOwnership(userId, device_id, req.app.locals.db);
 
       const result = await Device.destroy({
         where: {
@@ -126,6 +133,8 @@ const deviceController = {
   async heartbeat(req, res) {
     try {
       const { device_id, timestamp, status, temp } = req.body;
+      const { Device } = req.app.locals.db;
+      
       const device = await Device.findOne({
         where: { device_id }
       });
@@ -151,6 +160,7 @@ const deviceController = {
     try {
       const { device_id, device_secret, device_name, model_version } = req.body;
       const userId = req.user.userId;
+      const { Device } = req.app.locals.db;
       
       console.log('Attempting to register/bind device:', { device_id, device_secret, userId });
 
@@ -202,10 +212,15 @@ const deviceController = {
       );
 
       res.json({
-        device_id: device.device_id,
-        device_name: device.device_name,
-        status: device.status,
-        token: deviceToken
+        success: true,
+        data: {
+          device_id: device.device_id,
+          device_name: device.device_name,
+          status: device.status,
+          device_token: deviceToken,
+          install_location: device.install_location,
+          model_version: device.model_version
+        }
       });
     } catch (err) {
       console.error('Bind device error:', err);
@@ -221,23 +236,28 @@ const deviceController = {
     try {
       const { device_id } = req.body;
       const userId = req.user.userId;
+      const { Device } = req.app.locals.db;
 
-      const device = await Device.findOne({
+      if (!device_id || !userId) {
+        return res.status(400).json({ error: 'Missing required parameters' });
+      }
+
+      // 直接删除设备
+      const result = await Device.destroy({
         where: { device_id, user_id: userId }
       });
 
-      if (!device) {
+      if (result === 0) {
         return res.status(404).json({ error: 'Device not found' });
       }
 
-      await device.update({
-        user_id: null
+      res.json({ 
+        success: true,
+        message: 'Device deleted successfully'
       });
-
-      res.json({ success: true });
     } catch (err) {
       console.error('Unbind device error:', err);
-      res.status(500).json({ error: 'Failed to unbind device' });
+      res.status(500).json({ error: 'Failed to delete device' });
     }
   },
 
@@ -282,7 +302,8 @@ const deviceController = {
   async reportEvent(req, res) {
     try {
       const { device_id, event_type, event_time, confidence, image_path, video_path, alarm_message } = req.body;
-      
+      const { Device, AlarmRecord } = req.app.locals.db;
+
       const device = await Device.findOne({
         where: { device_id }
       });
@@ -305,7 +326,16 @@ const deviceController = {
 
       res.json({
         success: true,
-        data: alarm
+        data: {
+          alarm_id: alarm.alarm_id,
+          device_id: alarm.device_id,
+          event_type: alarm.event_type,
+          event_time: alarm.event_time,
+          confidence: alarm.confidence,
+          handled: alarm.handled,
+          video_path: alarm.video_path,
+          created_at: alarm.created_at
+        }
       });
     } catch (err) {
       console.error('Report event error:', err);

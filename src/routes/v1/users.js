@@ -2,32 +2,12 @@ const express = require('express');
 const router = express.Router();
 const { authenticate } = require('../../middleware/auth');
 const { User } = require('../../db');
+const userController = require('../../controllers/userController');
 
 // Get current user info
-router.get('/me', authenticate, async (req, res) => {
-  try {
-    const user = await User.findOne({
-      where: { user_id: req.user.userId },
-      attributes: ['user_id', 'username', 'name', 'contact_info']
-    });
+router.get('/me', authenticate, userController.getCurrentUser);
 
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    res.json({
-      success: true,
-      data: {
-        id: user.user_id,
-        username: user.username,
-        name: user.name,
-        contact_info: user.contact_info
-      }
-    });
-  } catch (err) {
-    console.error('Get user info error:', err);
-    res.status(500).json({ error: 'Failed to get user info' });
-  }
-});
+// Delete current user
+router.delete('/me', authenticate, userController.deleteCurrentUser);
 
 module.exports = router; 

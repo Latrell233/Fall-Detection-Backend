@@ -1,38 +1,38 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../index');
 
+module.exports = (sequelize, Sequelize) => {
 const Device = sequelize.define('Device', {
   device_id: {
-    type: DataTypes.STRING(50),
+      type: DataTypes.STRING(50),
     primaryKey: true
   },
   device_name: {
-    type: DataTypes.STRING(100),
+      type: DataTypes.STRING(100),
     allowNull: false
   },
   user_id: {
     type: DataTypes.INTEGER,
-    allowNull: false,
+      allowNull: false,
     references: {
       model: 'users',
       key: 'user_id'
     }
   },
   install_location: {
-    type: DataTypes.STRING(100),
-    allowNull: false
+      type: DataTypes.STRING(100),
+      allowNull: false
   },
   device_secret: {
-    type: DataTypes.STRING(100),
+      type: DataTypes.STRING(100),
     allowNull: false
   },
   status: {
-    type: DataTypes.STRING(20),
-    allowNull: false,
+      type: DataTypes.STRING(20),
+      allowNull: false,
     defaultValue: 'offline'
   },
   model_version: {
-    type: DataTypes.STRING(50),
+      type: DataTypes.STRING(50),
     allowNull: false
   },
   last_active: {
@@ -56,4 +56,5 @@ const Device = sequelize.define('Device', {
   underscored: true
 });
 
-module.exports = Device; 
+  return Device;
+}; 

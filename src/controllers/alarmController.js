@@ -1,5 +1,3 @@
-const db = require('../db');
-const { AlarmRecord, Device, Video } = require('../db');
 const { Op } = require('sequelize');
 
 module.exports = {
@@ -8,6 +6,7 @@ module.exports = {
     try {
       const userId = req.user.userId;
       const { from, to, status, device_id, minConfidence } = req.query;
+      const { AlarmRecord, Device } = req.app.locals.db;
 
       const whereClause = {
         user_id: userId

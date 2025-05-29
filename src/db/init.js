@@ -1,8 +1,4 @@
-const sequelize = require('./index');
-const User = require('./models/User');
-const Device = require('./models/Device');
-const AlarmRecord = require('./models/AlarmRecord');
-const Video = require('./models/Video');
+const { User, Device, AlarmRecord, Video, sequelize } = require('./index');
 const bcrypt = require('bcrypt');
 
 async function initDatabase() {
@@ -17,68 +13,73 @@ async function initDatabase() {
     await sequelize.sync({ force });
     console.log('数据库表创建成功');
 
-    // 创建测试用户
-    const testUser = await User.create({
-      username: 'testuser',
-      password_hash: await bcrypt.hash('test123', 10),
-      name: 'Test User',
-      contact_info: 'test@example.com'
-    });
-    console.log('测试用户创建成功:', testUser.username);
+    // 只有在强制重建表时才创建测试数据
+    if (force) {
+      // 创建测试用户
+      const testUser = await User.create({
+        username: 'testuser',
+        password_hash: await bcrypt.hash('test123', 10),
+        name: 'Test User',
+        contact_info: 'test@example.com'
+      });
+      console.log('测试用户创建成功:', testUser.username);
 
-    // 创建测试设备
-    const testDevice = await Device.create({
-      device_id: 'TEST_DEVICE_001',
-      device_name: 'Test Camera',
-      user_id: testUser.user_id,
-      install_location: 'Living Room',
-      device_secret: 'test_secret_123',
-      status: 'online',
-      model_version: '1.0.0',
-      last_active: new Date(),
-      config_json: {
-        threshold: 0.8,
-        record_video: true,
-        video_length_sec: 10
-      }
-    });
-    console.log('测试设备创建成功:', testDevice.device_id);
+      // 创建测试设备
+      const testDevice = await Device.create({
+        device_id: 'TEST_DEVICE_001',
+        device_name: 'Test Camera',
+        user_id: testUser.user_id,
+        install_location: 'Living Room',
+        device_secret: 'test_secret_123',
+        status: 'online',
+        model_version: '1.0.0',
+        last_active: new Date(),
+        config_json: {
+          threshold: 0.8,
+          record_video: true,
+          video_length_sec: 10
+        }
+      });
+      console.log('测试设备创建成功:', testDevice.device_id);
 
-    // 创建测试告警记录
-    const testAlarm = await AlarmRecord.create({
-      device_id: testDevice.device_id,
-      user_id: testUser.user_id,
-      event_type: 'fall',
-      event_time: new Date(),
-      confidence: 0.95,
-      handled: false,
-      alarm_message: '检测到跌倒事件'
-    });
-    console.log('测试告警记录创建成功:', testAlarm.alarm_id);
+      // 创建测试告警记录
+      const testAlarm = await AlarmRecord.create({
+        device_id: testDevice.device_id,
+        user_id: testUser.user_id,
+        event_type: 'fall',
+        event_time: new Date(),
+        confidence: 0.95,
+        handled: false,
+        alarm_message: '检测到跌倒事件'
+      });
+      console.log('测试告警记录创建成功:', testAlarm.alarm_id);
 
-    // 创建测试视频记录
-    const testVideo = await Video.create({
-      device_id: testDevice.device_id,
-      alarm_id: testAlarm.alarm_id,
-      start_time: new Date(),
-      duration: 30,
-      file_path: '/videos/test.mp4',
-      file_size: 1024000,
-      format: 'mp4'
-    });
-    console.log('测试视频记录创建成功:', testVideo.video_id);
+      // 创建测试视频记录
+      const testVideo = await Video.create({
+        device_id: testDevice.device_id,
+        alarm_id: testAlarm.alarm_id,
+        start_time: new Date(),
+        duration: 30,
+        file_path: '/videos/test.mp4',
+        file_size: 1024000,
+        format: 'mp4'
+      });
+      console.log('测试视频记录创建成功:', testVideo.video_id);
+    }
 
     console.log('数据库初始化完成');
-    process.exit(0);
+    return true;
   } catch (error) {
     console.error('数据库初始化失败:', error);
-    process.exit(1);
+    throw error;
   }
 }
 
 // 检查是否直接运行此脚本
 if (require.main === module) {
-  initDatabase();
+  initDatabase()
+    .then(() => process.exit(0))
+    .catch(() => process.exit(1));
 } else {
   module.exports = initDatabase;
 } 

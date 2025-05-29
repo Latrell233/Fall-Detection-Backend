@@ -1,25 +1,34 @@
 const jwt = require('jsonwebtoken');
 const config = require('../../config/config');
-const { Device } = require('../db');
+
+const validateDeviceOwnership = async (userId, device_id, db) => {
+  try {
+    if (!userId || !device_id || !db) {
+      throw new Error('Missing required parameters');
+    }
+
+    const { Device } = db;
+    if (!Device) {
+      throw new Error('Device model not found');
+    }
+
+    const device = await Device.findOne({
+      where: { device_id, user_id: userId }
+    });
+
+    if (!device) {
+      throw new Error('Device not found or not owned by user');
+    }
+
+    return true;
+  } catch (err) {
+    console.error('Device ownership validation error:', err);
+    throw err;
+  }
+};
 
 module.exports = {
-  async validateDeviceOwnership(userId, device_id) {
-    try {
-      const device = await Device.findOne({
-        where: {
-          device_id,
-          user_id: userId
-        }
-      });
-
-      if (!device) {
-        throw new Error('Device not found or access denied');
-      }
-    } catch (err) {
-      console.error('Device ownership validation error:', err);
-      throw err;
-    }
-  },
+  validateDeviceOwnership,
 
   authenticateDevice(req, res, next) {
     try {

@@ -3,20 +3,27 @@ FROM node:18
 # 设置工作目录
 WORKDIR /usr/src/app
 
-# 安装 curl 用于健康检查
+# 安装系统依赖
 RUN apt-get update && \
-    apt-get install -y curl && \
+    apt-get install -y \
+    python3 \
+    make \
+    g++ \
+    curl && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 # 复制 package.json 和 package-lock.json
 COPY package*.json ./
 
-# 使用 npm install 替代 npm ci
-RUN npm install --omit=dev
+# 安装依赖
+RUN npm install
 
 # 复制源代码
 COPY . .
+
+# 创建必要的目录
+RUN mkdir -p uploads logs
 
 # 设置环境变量
 ENV NODE_ENV=production

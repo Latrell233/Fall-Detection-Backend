@@ -1,7 +1,6 @@
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const config = require('../../config/config');
-const { User } = require('../db');
 const { sendResetEmail } = require('../services/emailService');
 
 const saltRounds = 10;
@@ -28,13 +27,16 @@ module.exports = {
       console.log('Registration attempt:', { username, name, contact_info });
       
       // Check if user already exists
-      const userExists = await User.findOne({
+      const existingUser = await req.app.locals.db.User.findOne({
         where: { username }
       });
       
-      if (userExists) {
+      if (existingUser) {
         console.log('User already exists:', username);
-        return res.status(400).json({ error: 'User already exists' });
+        return res.status(400).json({
+          error: 'Registration failed',
+          details: 'Username already exists'
+        });
       }
 
       // Hash password
@@ -43,29 +45,23 @@ module.exports = {
 
       // Create new user
       console.log('Attempting to create new user...');
-      const newUser = await User.create({
+      const user = await req.app.locals.db.User.create({
         username,
         password_hash: hashedPassword,
         name,
         contact_info
       });
-      console.log('User created successfully:', newUser.user_id);
+      console.log('User created successfully:', user.user_id);
 
       res.status(201).json({
         success: true,
-        user_id: newUser.user_id
+        user_id: user.user_id
       });
     } catch (err) {
-      console.error('Registration error details:', {
-        message: err.message,
-        stack: err.stack,
-        code: err.code,
-        detail: err.detail
-      });
-      res.status(500).json({ 
+      console.error('Registration error details:', err);
+      res.status(500).json({
         error: 'Registration failed',
-        details: err.message,
-        code: err.code
+        details: err.message
       });
     }
   },
@@ -76,7 +72,7 @@ module.exports = {
       console.log('Login attempt:', { username });
 
       // Get user from database
-      const user = await User.findOne({
+      const user = await req.app.locals.db.User.findOne({
         where: { username },
         attributes: ['user_id', 'username', 'password_hash', 'name', 'contact_info']
       });
@@ -115,16 +111,10 @@ module.exports = {
         }
       });
     } catch (err) {
-      console.error('Login error details:', {
-        message: err.message,
-        stack: err.stack,
-        code: err.code,
-        detail: err.detail
-      });
-      res.status(500).json({ 
+      console.error('Login error details:', err);
+      res.status(500).json({
         error: 'Login failed',
-        details: err.message,
-        code: err.code
+        details: err.message
       });
     }
   },
@@ -165,7 +155,7 @@ module.exports = {
       console.log('Password reset request for user:', username);
 
       // Check if user exists
-      const user = await User.findOne({
+      const user = await req.app.locals.db.User.findOne({
         where: { username },
         attributes: ['user_id', 'username', 'contact_info']
       });
@@ -221,7 +211,7 @@ module.exports = {
       const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
 
       // Update password and clear reset token
-      await User.update(
+      await req.app.locals.db.User.update(
         {
           password_hash: hashedPassword,
           reset_token: null
