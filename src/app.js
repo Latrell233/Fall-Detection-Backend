@@ -3,7 +3,6 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const path = require('path');
-const fs = require('fs');
 const config = require('../config/config');
 const db = require('./db');
 const initDatabase = require('./db/init');
@@ -15,22 +14,6 @@ const userRoutes = require('./routes/v1/users');
 const mediaRoutes = require('./routes/v1/media');
 
 const app = express();
-
-// 创建必要的目录
-const dirs = [
-  path.join(__dirname, '../uploads/temp'),
-  path.join(__dirname, '../uploads/images'),
-  path.join(__dirname, '../uploads/videos'),
-  path.join(__dirname, '../public/images'),
-  path.join(__dirname, '../public/videos')
-];
-
-dirs.forEach(dir => {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-    console.log(`Created directory: ${dir}`);
-  }
-});
 
 // Middleware
 app.use(express.json());

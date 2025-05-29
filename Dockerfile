@@ -9,31 +9,29 @@ RUN apt-get update && \
     python3 \
     make \
     g++ \
-    curl \
-    policycoreutils \
-    selinux-utils && \
+    curl && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+# 创建必要的目录
+RUN mkdir -p /usr/src/app/uploads/temp \
+    /usr/src/app/uploads/images \
+    /usr/src/app/uploads/videos \
+    /usr/src/app/public/images \
+    /usr/src/app/public/videos
+
+# 设置目录权限
+RUN chown -R node:node /usr/src/app && \
+    chmod -R 777 /usr/src/app
+
 # 复制 package.json 和 package-lock.json
-COPY package*.json ./
+COPY --chown=node:node package*.json ./
 
 # 安装依赖
 RUN npm install
 
 # 复制源代码
-COPY . .
-
-# 创建上传目录并设置权限
-RUN mkdir -p /usr/src/app/uploads/temp \
-    /usr/src/app/uploads/images \
-    /usr/src/app/uploads/videos \
-    /usr/src/app/public/images \
-    /usr/src/app/public/videos \
-    && chown -R node:node /usr/src/app \
-    && chmod -R 755 /usr/src/app \
-    && chcon -R -t httpd_sys_rw_content_t /usr/src/app/uploads \
-    && chcon -R -t httpd_sys_content_t /usr/src/app/public
+COPY --chown=node:node . .
 
 # 使用非 root 用户运行
 USER node
