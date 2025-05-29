@@ -23,26 +23,34 @@ const contact_info = Joi.string().email().required().messages({
 });
 
 const registerSchema = Joi.object({
-  username,
-  password,
-  name,
-  contact_info
+  body: Joi.object({
+    username,
+    password,
+    name,
+    contact_info
+  })
 });
 
 const loginSchema = Joi.object({
-  username,
-  password
+  body: Joi.object({
+    username,
+    password
+  })
 });
 
 const refreshTokenSchema = Joi.object({
-  refreshToken: Joi.string().required().messages({
-    'any.required': 'Refresh token is required'
+  body: Joi.object({
+    refreshToken: Joi.string().required().messages({
+      'any.required': 'Refresh token is required'
+    })
   })
 });
 
 const resetPasswordSchema = Joi.object({
-  username,
-  newPassword: password
+  body: Joi.object({
+    username,
+    newPassword: password
+  })
 });
 
 module.exports = {

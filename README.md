@@ -6,16 +6,15 @@
 ## 功能特性
 - 设备管理：设备注册、心跳检测、状态监控
 - 告警处理：跌倒检测、异常行为识别、告警确认
-- 用户认证：JWT认证、密码重置、Token刷新
-- 视频管理：视频存储、回放、下载
-- 健康检查：服务状态监控、容器健康检查
+- 用户认证：JWT认证、Token刷新
+- 媒体管理：图片和视频存储、访问
+- 健康检查：服务状态监控
 
 ## 技术栈
 - 运行环境：Node.js
 - Web框架：Express
 - 数据库：PostgreSQL
 - ORM：Sequelize
-- 消息队列：MQTT (EMQX)
 - 容器化：Docker
 - 认证：JWT
 - 文件存储：本地文件系统
@@ -33,14 +32,20 @@ backend/
 │   ├── app.js            # 应用入口
 │   └── db.js             # 数据库配置
 ├── config/                # 配置文件目录
-├── node_modules/          # 依赖包目录
+├── uploads/              # 文件上传目录
+│   ├── images/          # 图片存储
+│   └── videos/          # 视频存储
+├── public/              # 公共访问目录
+│   ├── images/         # 图片访问
+│   └── videos/         # 视频访问
+├── test_downloads/     # 测试下载目录
 ├── API_DOCUMENTATION.md   # API文档
 ├── 数据库表结构.md         # 数据库设计文档
 ├── Dockerfile            # Docker构建文件
 ├── docker-compose.yml    # Docker编排配置
 ├── package.json         # 项目依赖配置
-├── package-lock.json    # 依赖版本锁定文件
-├── jest.config.js       # Jest测试配置
+├── api_test.sh         # API测试脚本
+├── event_test.sh       # 事件测试脚本
 └── README.md            # 项目说明文档
 ```
 
@@ -98,7 +103,7 @@ cd backend
 ### 2. 环境准备
 ```bash
 # 创建必要的目录
-mkdir -p uploads logs
+mkdir -p uploads/images uploads/videos public/images public/videos test_downloads
 
 # 配置环境变量
 cp .env.example .env
@@ -129,18 +134,23 @@ node src/db/init.js
 
 ### 5. 验证部署
 - 访问健康检查接口：http://localhost:3000/health
-- 访问 EMQX Dashboard：http://localhost:18083
-  - 用户名：admin
-  - 密码：public
+- 运行测试脚本：
+  ```bash
+  # API测试
+  ./api_test.sh
+  
+  # 事件测试
+  ./event_test.sh
+  ```
 
 ### 6. 常见问题处理
 1. 如果遇到权限问题：
 ```bash
 # 检查目录权限
-ls -la uploads logs
+ls -la uploads public test_downloads
 
 # 如果需要，修改权限
-chmod -R 755 uploads logs
+chmod -R 755 uploads public test_downloads
 ```
 
 2. 如果需要重新部署：
@@ -167,8 +177,7 @@ docker-compose logs -f backend
 1. 准备环境
 ```bash
 # 创建必要的目录
-mkdir -p uploads
-mkdir -p logs
+mkdir -p uploads/images uploads/videos public/images public/videos test_downloads
 
 # 复制环境变量文件
 cp .env.example .env
@@ -198,9 +207,7 @@ node src/db/init.js
 
 4. 访问服务
 - 后端API: http://localhost:3000
-- EMQX Dashboard: http://localhost:18083
-  - 用户名: admin
-  - 密码: public
+- 健康检查: http://localhost:3000/health
 
 5. 停止服务
 ```bash
@@ -212,18 +219,13 @@ docker-compose down -v
 ```
 
 ### 部署注意事项
-1. Alibaba Cloud Linux 3 部署
-   - 使用基于 Debian 的 Node.js 镜像
-   - 确保系统已安装 Docker 和 Docker Compose
-   - 如果遇到权限问题，可能需要调整 SELinux 设置
-
-2. 系统要求
+1. 系统要求
    - Docker 版本 >= 20.10
    - Docker Compose 版本 >= 2.0
    - 至少 2GB 可用内存
    - 至少 10GB 可用磁盘空间
 
-3. 性能优化
+2. 性能优化
    - 调整 Docker 守护进程配置
    - 配置适当的日志轮转
    - 设置合理的资源限制
@@ -235,7 +237,6 @@ docker-compose down -v
 - `DB_PASSWORD`: 数据库密码
 - `JWT_SECRET`: JWT密钥
 - `JWT_REFRESH_SECRET`: JWT刷新密钥
-- `MQTT_BROKER`: MQTT服务器地址（Docker环境使用 'mqtt://emqx:1883'）
 - `UPLOAD_DIR`: 文件上传目录（默认 uploads）
 - `NODE_ENV`: 运行环境（development/production）
 - `CORS_ORIGIN`: 跨域设置（默认 "*"）
@@ -261,11 +262,11 @@ docker-compose down -v
 
 ## 测试
 ```bash
-# 运行单元测试
-npm test
+# 运行API测试
+./api_test.sh
 
-# 运行集成测试
-npm run test:integration
+# 运行事件测试
+./event_test.sh
 ```
 
 ## 文档

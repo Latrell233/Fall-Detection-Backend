@@ -5,7 +5,14 @@ module.exports = {
   validate(schema) {
     return (req, res, next) => {
       try {
-        const { error, value } = schema.validate(req.body, {
+        // 构建完整的验证对象
+        const validationObject = {
+          params: req.params,
+          query: req.query,
+          body: req.body
+        };
+
+        const { error, value } = schema.validate(validationObject, {
           abortEarly: false,
           stripUnknown: true
         });
@@ -18,8 +25,11 @@ module.exports = {
           return res.status(400).json({ errors });
         }
 
-        // Replace body with validated values
-        req.body = value;
+        // 更新请求对象
+        req.params = value.params || req.params;
+        req.query = value.query || req.query;
+        req.body = value.body || req.body;
+        
         next();
       } catch (err) {
         console.error('Validation error:', err);

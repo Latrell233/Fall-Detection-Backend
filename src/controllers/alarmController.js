@@ -1,59 +1,36 @@
 const { Op } = require('sequelize');
+const { AlarmRecord, Device, Video } = require('../db').getModels();
 
 module.exports = {
   // 获取报警列表
   async getAlarms(req, res) {
     try {
-      const userId = req.user.userId;
       const { from, to, status, device_id, minConfidence } = req.query;
-      const { AlarmRecord, Device } = req.app.locals.db;
+      const userId = req.user.userId;
 
-      const whereClause = {
-        user_id: userId
-      };
-
+      const where = { user_id: userId };
+      if (from && to) {
+        where.event_time = {
+          [Op.between]: [new Date(from), new Date(to)]
+        };
+      }
       if (status) {
-        whereClause.handled = status === 'handled';
+        where.handled = status === 'handled';
       }
-
-      if (from) {
-        whereClause.event_time = {
-          [Op.gte]: from
-        };
-      }
-
-      if (to) {
-        whereClause.event_time = {
-          ...whereClause.event_time,
-          [Op.lte]: to
-        };
-      }
-
       if (device_id) {
-        whereClause.device_id = device_id;
+        where.device_id = device_id;
       }
-
       if (minConfidence) {
-        whereClause.confidence = {
+        where.confidence = {
           [Op.gte]: parseFloat(minConfidence)
         };
       }
 
-      const alarms = await AlarmRecord.findAndCountAll({
-        attributes: [
-          'alarm_id',
-          'device_id',
-          'event_type',
-          'event_time',
-          'image_path',
-          'confidence',
-          'handled',
-          'alarm_message',
-          'created_at'
-        ],
-        where: whereClause,
+      const { count, rows } = await AlarmRecord.findAndCountAll({
+        where,
         include: [{
           model: Device,
+          as: 'device',
           attributes: ['device_name', 'install_location']
         }],
         order: [['event_time', 'DESC']]
@@ -62,12 +39,12 @@ module.exports = {
       res.json({
         success: true,
         data: {
-          alarms: alarms.rows,
-          total: alarms.count
+          alarms: rows,
+          total: count
         }
       });
-    } catch (err) {
-      console.error('Get alarms error:', err);
+    } catch (error) {
+      console.error('Get alarms error:', error);
       res.status(500).json({ error: 'Failed to get alarms' });
     }
   },
@@ -75,8 +52,8 @@ module.exports = {
   // 获取报警详情
   async getAlarmDetail(req, res) {
     try {
-      const userId = req.user.userId;
       const { alarmId } = req.params;
+      const userId = req.user.userId;
 
       const alarm = await AlarmRecord.findOne({
         where: {
@@ -86,11 +63,13 @@ module.exports = {
         include: [
           {
             model: Device,
+            as: 'device',
             attributes: ['device_name', 'install_location']
           },
           {
             model: Video,
-            attributes: ['video_id', 'file_path', 'duration', 'format']
+            as: 'video',
+            attributes: ['video_id', 'video_path', 'duration', 'format']
           }
         ]
       });
@@ -99,12 +78,24 @@ module.exports = {
         return res.status(404).json({ error: 'Alarm not found' });
       }
 
+      // 处理文件路径
+      const alarmData = alarm.toJSON();
+      if (alarmData.image_path) {
+        alarmData.image_path = alarmData.image_path.replace('/uploads', '');
+      }
+      if (alarmData.video_path) {
+        alarmData.video_path = alarmData.video_path.replace('/uploads', '');
+      }
+      if (alarmData.video && alarmData.video.video_path) {
+        alarmData.video.video_path = alarmData.video.video_path.replace('/uploads', '');
+      }
+
       res.json({
         success: true,
-        data: alarm
+        data: alarmData
       });
-    } catch (err) {
-      console.error('Get alarm detail error:', err);
+    } catch (error) {
+      console.error('Get alarm detail error:', error);
       res.status(500).json({ error: 'Failed to get alarm detail' });
     }
   },
@@ -112,12 +103,12 @@ module.exports = {
   // 确认报警
   async acknowledgeAlarm(req, res) {
     try {
-      const userId = req.user.userId;
       const { alarmId } = req.params;
       const { action, message } = req.body;
-
-      if (!['confirm', 'dismiss'].includes(action)) {
-        return res.status(400).json({ 
+      const userId = req.user.userId;
+      console.log('acknowledgeAlarm body:', req.body);
+      if (!action || !['confirm', 'dismiss'].includes(action)) {
+        return res.status(400).json({
           error: 'Invalid action',
           details: 'Action must be either confirm or dismiss'
         });
@@ -131,21 +122,20 @@ module.exports = {
       });
 
       if (!alarm) {
-        return res.status(404).json({ error: 'Alarm not found or not authorized' });
+        return res.status(404).json({ error: 'Alarm not found' });
       }
 
-      // 更新报警状态
       await alarm.update({
         handled: true,
-        updated_at: new Date()
+        alarm_message: message || `Alarm ${action}ed by user`
       });
 
       res.json({
         success: true,
         message: 'Alarm acknowledged successfully'
       });
-    } catch (err) {
-      console.error('Acknowledge alarm error:', err);
+    } catch (error) {
+      console.error('Acknowledge alarm error:', error);
       res.status(500).json({ error: 'Failed to acknowledge alarm' });
     }
   }

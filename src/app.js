@@ -2,8 +2,10 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const path = require('path');
 const config = require('../config/config');
 const db = require('./db');
+const initDatabase = require('./db/init');
 const v1Routes = require('./routes/v1');
 
 const app = express();
@@ -14,6 +16,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cors(config.cors));
 app.use(helmet());
 app.use(morgan('dev'));
+
+// 静态文件服务
+app.use('/api/v1/media', express.static(path.join(__dirname, '../public')));
 
 // Debug middleware
 app.use((req, res, next) => {
@@ -39,11 +44,17 @@ app.use((err, req, res, next) => {
 async function startServer() {
   try {
     // 初始化数据库
-    const dbInstance = await db();
+    await db.connect();
+    const sequelize = db.getSequelize();
+    const models = db.getModels();
+    
+    // 运行数据库初始化脚本
+    await initDatabase();
     console.log('数据库初始化完成');
 
-    // 将数据库对象添加到 app 中，供路由使用
-    app.locals.db = dbInstance;
+    // 将数据库对象和模型添加到 app 中，供路由使用
+    app.locals.db = models;
+    app.locals.sequelize = sequelize;
 
     // 添加路由
     app.use('/api/v1', v1Routes);

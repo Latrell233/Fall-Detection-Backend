@@ -1,20 +1,37 @@
-const { DataTypes } = require('sequelize');
+const { Model, DataTypes } = require('sequelize');
 
-module.exports = (sequelize, Sequelize) => {
-const AlarmRecord = sequelize.define('AlarmRecord', {
-  alarm_id: {
-      type: DataTypes.BIGINT,
-    primaryKey: true,
-    autoIncrement: true
-  },
-  device_id: {
-      type: DataTypes.STRING(50),
-    allowNull: false,
-    references: {
-      model: 'devices',
-      key: 'device_id'
+module.exports = (sequelize) => {
+  class AlarmRecord extends Model {
+    static associate(models) {
+      // 定义与 Device 的关联
+      AlarmRecord.belongsTo(models.Device, {
+        foreignKey: 'device_id',
+        targetKey: 'device_id',
+        as: 'device'
+      });
+      
+      // 定义与 Video 的关联
+      AlarmRecord.hasOne(models.Video, {
+        foreignKey: 'alarm_id',
+        as: 'video'
+      });
     }
-  },
+  }
+
+  AlarmRecord.init({
+    alarm_id: {
+      type: DataTypes.BIGINT,
+      primaryKey: true,
+      autoIncrement: true
+    },
+    device_id: {
+      type: DataTypes.STRING(50),
+      allowNull: false,
+      references: {
+        model: 'devices',
+        key: 'device_id'
+      }
+    },
     user_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
@@ -28,9 +45,9 @@ const AlarmRecord = sequelize.define('AlarmRecord', {
       allowNull: false
     },
     event_time: {
-    type: DataTypes.DATE,
-    allowNull: false
-  },
+      type: DataTypes.DATE,
+      allowNull: false
+    },
     image_path: {
       type: DataTypes.STRING(255),
       allowNull: true
@@ -38,31 +55,34 @@ const AlarmRecord = sequelize.define('AlarmRecord', {
     video_path: {
       type: DataTypes.STRING(255),
       allowNull: true
-  },
-  confidence: {
-    type: DataTypes.FLOAT,
+    },
+    confidence: {
+      type: DataTypes.FLOAT,
       allowNull: true
-  },
+    },
     handled: {
       type: DataTypes.BOOLEAN,
       defaultValue: false
-  },
+    },
     alarm_message: {
-      type: DataTypes.STRING(255),
-    allowNull: true
-  },
-  created_at: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW
-  },
-  updated_at: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW
-  }
-}, {
-  timestamps: true,
-  underscored: true
-});
+      type: DataTypes.TEXT,
+      allowNull: true
+    },
+    created_at: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW
+    },
+    updated_at: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW
+    }
+  }, {
+    sequelize,
+    modelName: 'AlarmRecord',
+    tableName: 'alarm_records',
+    timestamps: true,
+    underscored: true
+  });
 
   return AlarmRecord;
 }; 

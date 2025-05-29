@@ -1,4 +1,4 @@
-const { User, Device, AlarmRecord, Video, sequelize } = require('./index');
+const db = require('../db');
 const bcrypt = require('bcrypt');
 
 async function initDatabase() {
@@ -9,6 +9,9 @@ async function initDatabase() {
       console.log('警告: 将删除所有现有数据并重建表');
     }
 
+    const sequelize = db.getSequelize();
+    const models = db.getModels();
+
     // 同步所有模型到数据库
     await sequelize.sync({ force });
     console.log('数据库表创建成功');
@@ -16,7 +19,7 @@ async function initDatabase() {
     // 只有在强制重建表时才创建测试数据
     if (force) {
       // 创建测试用户
-      const testUser = await User.create({
+      const testUser = await models.User.create({
         username: 'testuser',
         password_hash: await bcrypt.hash('test123', 10),
         name: 'Test User',
@@ -25,7 +28,7 @@ async function initDatabase() {
       console.log('测试用户创建成功:', testUser.username);
 
       // 创建测试设备
-      const testDevice = await Device.create({
+      const testDevice = await models.Device.create({
         device_id: 'TEST_DEVICE_001',
         device_name: 'Test Camera',
         user_id: testUser.user_id,
@@ -43,7 +46,7 @@ async function initDatabase() {
       console.log('测试设备创建成功:', testDevice.device_id);
 
       // 创建测试告警记录
-      const testAlarm = await AlarmRecord.create({
+      const testAlarm = await models.AlarmRecord.create({
         device_id: testDevice.device_id,
         user_id: testUser.user_id,
         event_type: 'fall',
@@ -55,12 +58,12 @@ async function initDatabase() {
       console.log('测试告警记录创建成功:', testAlarm.alarm_id);
 
       // 创建测试视频记录
-      const testVideo = await Video.create({
+      const testVideo = await models.Video.create({
         device_id: testDevice.device_id,
         alarm_id: testAlarm.alarm_id,
         start_time: new Date(),
         duration: 30,
-        file_path: '/videos/test.mp4',
+        video_path: '/videos/test.mp4',
         file_size: 1024000,
         format: 'mp4'
       });

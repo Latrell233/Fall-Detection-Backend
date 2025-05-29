@@ -34,11 +34,13 @@ services:
       NODE_ENV: development
       CORS_ORIGIN: "*"
       UPLOAD_DIR: uploads
+      PUBLIC_DIR: public
     ports:
       - "3000:3000"
     volumes:
       - ./src:/usr/src/app/src
       - ./uploads:/usr/src/app/uploads
+      - ./public:/usr/src/app/public
     command: npx nodemon src/app.js
     restart: unless-stopped
 
