@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 const config = require('../../config/config');
 const { validateDeviceOwnership } = require('../middleware/deviceAuth');
 const { Op } = require('sequelize');
-const sequelize = require('sequelize');
+const { getSequelize } = require('../db');
 
 const deviceController = {
   async getDevice(req, res) {
@@ -235,6 +235,7 @@ const deviceController = {
 
   // 设备解绑
   async unbindDevice(req, res) {
+    const sequelize = getSequelize();
     const transaction = await sequelize.transaction();
     
     try {
