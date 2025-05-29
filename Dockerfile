@@ -22,17 +22,18 @@ RUN npm install
 # 复制源代码
 COPY . .
 
-# 创建必要的目录
-RUN mkdir -p uploads logs
+# 创建上传目录并设置权限
+RUN mkdir -p /usr/src/app/uploads/temp \
+    /usr/src/app/uploads/images \
+    /usr/src/app/uploads/videos \
+    /usr/src/app/public/images \
+    /usr/src/app/public/videos \
+    && chown -R node:node /usr/src/app/uploads \
+    && chown -R node:node /usr/src/app/public \
+    && chmod -R 755 /usr/src/app/uploads \
+    && chmod -R 755 /usr/src/app/public
 
-# 设置环境变量
-ENV NODE_ENV=production
-ENV PORT=3000
-
-# 创建上传目录
-RUN mkdir -p uploads && chown -R node:node uploads
-
-# 切换到非root用户
+# 使用非 root 用户运行
 USER node
 
 # 健康检查
