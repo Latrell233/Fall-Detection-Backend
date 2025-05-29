@@ -7,6 +7,11 @@ const config = require('../config/config');
 const db = require('./db');
 const initDatabase = require('./db/init');
 const v1Routes = require('./routes/v1');
+const authRoutes = require('./routes/v1/auth');
+const deviceRoutes = require('./routes/v1/devices');
+const alarmRoutes = require('./routes/v1/alarms');
+const userRoutes = require('./routes/v1/users');
+const mediaRoutes = require('./routes/v1/media');
 
 const app = express();
 
@@ -18,7 +23,8 @@ app.use(helmet());
 app.use(morgan('dev'));
 
 // 静态文件服务
-app.use('/api/v1/media', express.static(path.join(__dirname, '../public')));
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/public', express.static(path.join(__dirname, '../public')));
 
 // Debug middleware
 app.use((req, res, next) => {
@@ -58,6 +64,11 @@ async function startServer() {
 
     // 添加路由
     app.use('/api/v1', v1Routes);
+    app.use('/api/v1/auth', authRoutes);
+    app.use('/api/v1/devices', deviceRoutes);
+    app.use('/api/v1/alarms', alarmRoutes);
+    app.use('/api/v1/users', userRoutes);
+    app.use('/api/v1/media', mediaRoutes);
 
     // 启动服务器
     const PORT = config.server.port || 3000;

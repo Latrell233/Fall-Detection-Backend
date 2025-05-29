@@ -236,28 +236,42 @@ const deviceController = {
     try {
       const { device_id } = req.body;
       const userId = req.user.userId;
-      const { Device } = req.app.locals.db;
+      const { Device, AlarmRecord } = req.app.locals.db;
 
       if (!device_id || !userId) {
         return res.status(400).json({ error: 'Missing required parameters' });
       }
 
-      // 直接删除设备
-      const result = await Device.destroy({
-        where: { device_id, user_id: userId }
+      // 检查设备是否属于当前用户
+      const device = await Device.findOne({
+        where: {
+          device_id,
+          user_id: userId
+        }
       });
 
-      if (result === 0) {
+      if (!device) {
         return res.status(404).json({ error: 'Device not found' });
       }
 
-      res.json({ 
-        success: true,
-        message: 'Device deleted successfully'
+      // 先删除设备相关的所有报警记录
+      await AlarmRecord.destroy({
+        where: {
+          device_id,
+          user_id: userId
+        }
       });
-    } catch (err) {
-      console.error('Unbind device error:', err);
-      res.status(500).json({ error: 'Failed to delete device' });
+
+      // 再删除设备
+      await device.destroy();
+
+      res.json({
+        success: true,
+        message: 'Device unbound successfully'
+      });
+    } catch (error) {
+      console.error('Unbind device error:', error);
+      res.status(500).json({ error: 'Failed to unbind device' });
     }
   },
 

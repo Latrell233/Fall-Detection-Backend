@@ -2,6 +2,7 @@
 
 # 服务器配置
 API_BASE_URL="http://localhost:3000"
+# API_BASE_URL="http://120.79.205.110"
 
 # 颜色输出
 GREEN='\033[0;32m'
@@ -23,49 +24,35 @@ TIMESTAMP=$(date +%s)
 
 # 创建测试目录
 TEST_DIR="test_downloads"
-UPLOAD_DIR="uploads"
-PUBLIC_DIR="public"
-
-# 创建目录结构
 mkdir -p "$TEST_DIR"
-mkdir -p "$UPLOAD_DIR/images/${TEST_DEVICE_ID}"
-mkdir -p "$UPLOAD_DIR/videos/${TEST_DEVICE_ID}"
-mkdir -p "$PUBLIC_DIR/images/${TEST_DEVICE_ID}"
-mkdir -p "$PUBLIC_DIR/videos/${TEST_DEVICE_ID}"
-
-# 上传路径（内部使用）
-UPLOAD_IMAGE_PATH="/images/${TEST_DEVICE_ID}/${TIMESTAMP}.jpg"
-UPLOAD_VIDEO_PATH="/videos/${TEST_DEVICE_ID}/${TIMESTAMP}.mp4"
-
-# 下载路径（外部访问）
-DOWNLOAD_IMAGE_URL="${API_BASE_URL}/api/v1/media/images/${TEST_DEVICE_ID}/${TIMESTAMP}.jpg"
-DOWNLOAD_VIDEO_URL="${API_BASE_URL}/api/v1/media/videos/${TEST_DEVICE_ID}/${TIMESTAMP}.mp4"
 
 # 创建测试文件
 echo "创建测试文件..."
 echo "生成测试图片和视频..."
 
 # 生成测试图片（800x600 白色图片）
-convert -size 800x600 xc:white "$PUBLIC_DIR/images/${TEST_DEVICE_ID}/${TIMESTAMP}.jpg"
+# 创建测试图片（1KB的空白文件）
+# dd if=/dev/zero of="$TEST_DIR/test_image.jpg" bs=1K count=1 2>/dev/null
+
+convert -size 800x600 xc:white "$TEST_DIR/test_image.jpg"
 if [ $? -ne 0 ]; then
     echo -e "${RED}错误: 生成测试图片失败${NC}"
     exit 1
 fi
 
 # 生成测试视频（5秒测试视频）
-ffmpeg -f lavfi -i testsrc=duration=5:size=1280x720:rate=30 "$PUBLIC_DIR/videos/${TEST_DEVICE_ID}/${TIMESTAMP}.mp4" 2>/dev/null
+# 创建测试视频（1KB的空白文件）
+dd if=/dev/zero of="$TEST_DIR/test_video.mp4" bs=1K count=1 2>/dev/null
+
+# ffmpeg -f lavfi -i testsrc=duration=1:size=1280x720:rate=30 "$TEST_DIR/test_video.mp4" 2>/dev/null
 if [ $? -ne 0 ]; then
     echo -e "${RED}错误: 生成测试视频失败${NC}"
     exit 1
 fi
 
-# 复制到 uploads 目录（用于数据库记录）
-cp "$PUBLIC_DIR/images/${TEST_DEVICE_ID}/${TIMESTAMP}.jpg" "$UPLOAD_DIR/images/${TEST_DEVICE_ID}/"
-cp "$PUBLIC_DIR/videos/${TEST_DEVICE_ID}/${TIMESTAMP}.mp4" "$UPLOAD_DIR/videos/${TEST_DEVICE_ID}/"
-
 echo "测试文件创建完成:"
-echo "图片: $UPLOAD_DIR/images/${TEST_DEVICE_ID}/${TIMESTAMP}.jpg"
-echo "视频: $UPLOAD_DIR/videos/${TEST_DEVICE_ID}/${TIMESTAMP}.mp4"
+echo "图片: $TEST_DIR/test_image.jpg"
+echo "视频: $TEST_DIR/test_video.mp4"
 
 # 测试函数
 run_test() {
@@ -155,6 +142,41 @@ TOTAL_TESTS=$((TOTAL_TESTS + 1))
 
 # 4. 测试事件上报（带图片和视频）
 echo -e "\n${GREEN}测试: 事件上报${NC}"
+
+# 上传图片
+echo "上传图片..."
+IMAGE_RESPONSE=$(curl -s -X POST "$API_BASE_URL/api/v1/media/upload" \
+    -H "Authorization: Device $DEVICE_TOKEN" \
+    -F "file=@$TEST_DIR/test_image.jpg" \
+    -F "type=images" \
+    -F "device_id=$TEST_DEVICE_ID")
+
+echo "图片上传响应: $IMAGE_RESPONSE"
+
+# 上传视频
+echo "上传视频..."
+VIDEO_RESPONSE=$(curl -s -X POST "$API_BASE_URL/api/v1/media/upload" \
+    -H "Authorization: Device $DEVICE_TOKEN" \
+    -F "file=@$TEST_DIR/test_video.mp4" \
+    -F "type=videos" \
+    -F "device_id=$TEST_DEVICE_ID")
+
+echo "视频上传响应: $VIDEO_RESPONSE"
+
+# 提取文件路径
+IMAGE_PATH=$(echo "$IMAGE_RESPONSE" | grep -o '"path":"[^"]*"' | cut -d'"' -f4)
+VIDEO_PATH=$(echo "$VIDEO_RESPONSE" | grep -o '"path":"[^"]*"' | cut -d'"' -f4)
+
+if [ -z "$IMAGE_PATH" ] || [ -z "$VIDEO_PATH" ]; then
+    echo -e "${RED}错误: 文件上传失败${NC}"
+    exit 1
+fi
+
+echo "获取到的文件路径:"
+echo "图片: $IMAGE_PATH"
+echo "视频: $VIDEO_PATH"
+
+# 上报事件
 EVENT_RESPONSE=$(curl -s -X POST $API_BASE_URL/api/v1/devices/event \
     -H 'Content-Type: application/json' \
     -H "Authorization: Device $DEVICE_TOKEN" \
@@ -163,8 +185,8 @@ EVENT_RESPONSE=$(curl -s -X POST $API_BASE_URL/api/v1/devices/event \
         \"event_type\": \"fall\",
         \"event_time\": \"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\",
         \"confidence\": 0.95,
-        \"image_path\": \"$UPLOAD_IMAGE_PATH\",
-        \"video_path\": \"$UPLOAD_VIDEO_PATH\",
+        \"image_path\": \"$IMAGE_PATH\",
+        \"video_path\": \"$VIDEO_PATH\",
         \"alarm_message\": \"检测到跌倒事件\"
     }")
 
@@ -202,7 +224,7 @@ VIDEO_URL=$(echo "$ALARM_DETAIL_RESPONSE" | grep -o '"video_path":"[^"]*"' | cut
 
 if [ ! -z "$IMAGE_URL" ]; then
     echo "下载告警图片..."
-    curl -s -o "$TEST_DIR/alarm_image.jpg" "$API_BASE_URL/api/v1/media$IMAGE_URL"
+    curl -s -H "Authorization: Bearer $TOKEN" -o "$TEST_DIR/alarm_image.jpg" "$API_BASE_URL/api/v1/media$IMAGE_URL"
     if [ $? -eq 0 ]; then
         echo "图片下载成功: $TEST_DIR/alarm_image.jpg"
     else
@@ -212,7 +234,7 @@ fi
 
 if [ ! -z "$VIDEO_URL" ]; then
     echo "下载告警视频..."
-    curl -s -o "$TEST_DIR/alarm_video.mp4" "$API_BASE_URL/api/v1/media$VIDEO_URL"
+    curl -s -H "Authorization: Bearer $TOKEN" -o "$TEST_DIR/alarm_video.mp4" "$API_BASE_URL/api/v1/media$VIDEO_URL"
     if [ $? -eq 0 ]; then
         echo "视频下载成功: $TEST_DIR/alarm_video.mp4"
     else
@@ -255,6 +277,4 @@ echo -e "失败: ${RED}$FAILED_TESTS${NC}"
 echo -e "通过率: $((PASSED_TESTS * 100 / TOTAL_TESTS))%"
 
 echo -e "\n${YELLOW}测试文件位置:${NC}"
-echo "上传目录: $UPLOAD_DIR"
-echo "公共目录: $PUBLIC_DIR"
-echo "下载目录: $TEST_DIR" 
+echo "上传目录: $TEST_DIR" 
