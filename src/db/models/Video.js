@@ -31,10 +31,6 @@ module.exports = (sequelize, Sequelize) => {
       type: DataTypes.INTEGER,
       allowNull: false
     },
-    file_path: {
-      type: DataTypes.STRING(255),
-      allowNull: false
-    },
     video_path: {
       type: DataTypes.STRING(255),
       allowNull: false

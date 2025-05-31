@@ -4,8 +4,7 @@ const username = Joi.string().required().messages({
   'any.required': 'Username is required'
 });
 
-const password = Joi.string().min(8).required().messages({
-  'string.min': 'Password must be at least 8 characters long',
+const password = Joi.string().required().messages({
   'any.required': 'Password is required'
 });
 
