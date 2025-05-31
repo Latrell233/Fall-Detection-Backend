@@ -22,7 +22,6 @@ const deviceController = {
 
       res.json({
         device_id: device.device_id,
-        device_name: device.device_name,
         install_location: device.install_location,
         status: device.status,
         last_active: device.last_active,
@@ -66,7 +65,6 @@ const deviceController = {
 
       res.json({
         device_id: device.device_id,
-        device_name: device.device_name,
         status: device.status,
         last_active: device.last_active
       });
@@ -85,7 +83,6 @@ const deviceController = {
         where: { user_id: userId },
         attributes: [
           'device_id',
-          'device_name',
           'install_location',
           'status',
           'last_active'
@@ -158,7 +155,7 @@ const deviceController = {
   // 设备注册和绑定
   async bindDevice(req, res) {
     try {
-      const { device_id, device_secret, device_name } = req.body;
+      const { device_id, device_secret } = req.body;
       const userId = req.user.userId;
       const { Device } = req.app.locals.db;
       
@@ -174,7 +171,6 @@ const deviceController = {
           device = await Device.create({
             device_id,
             device_secret,
-            device_name,
             status: 'offline',
             user_id: userId,
             install_location: '未设置',
@@ -214,7 +210,6 @@ const deviceController = {
         success: true,
         data: {
           device_id: device.device_id,
-          device_name: device.device_name,
           status: device.status,
           device_token: deviceToken,
           install_location: device.install_location
@@ -291,7 +286,7 @@ const deviceController = {
 
   async registerDevice(req, res) {
     try {
-      const { device_id, device_secret, device_name } = req.body;
+      const { device_id, device_secret } = req.body;
       
       // 检查设备是否已存在
       const existingDevice = await Device.findOne({
@@ -306,7 +301,6 @@ const deviceController = {
       const newDevice = await Device.create({
         device_id,
         device_secret,
-        device_name,
         status: 'offline',
         user_id: null,
         install_location: '未设置',
@@ -315,7 +309,6 @@ const deviceController = {
 
       res.status(201).json({
         device_id: newDevice.device_id,
-        device_name: newDevice.device_name,
         status: newDevice.status
       });
     } catch (err) {

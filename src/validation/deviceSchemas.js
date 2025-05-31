@@ -7,9 +7,6 @@ const registerDeviceSchema = Joi.object({
     }),
     device_secret: Joi.string().required().messages({
       'any.required': 'Device secret is required'
-    }),
-    device_name: Joi.string().required().messages({
-      'any.required': 'Device name is required'
     })
   })
 });
@@ -26,8 +23,7 @@ const updateDeviceSchema = Joi.object({
 const bindDeviceSchema = Joi.object({
   body: Joi.object({
     device_id: Joi.string().required(),
-    device_secret: Joi.string().required(),
-    device_name: Joi.string().required()
+    device_secret: Joi.string().required()
   })
 });
 
