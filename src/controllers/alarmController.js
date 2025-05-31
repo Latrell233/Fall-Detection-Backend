@@ -31,7 +31,7 @@ module.exports = {
         include: [{
           model: Device,
           as: 'device',
-          attributes: ['device_name', 'install_location']
+          attributes: ['install_location']
         }],
         order: [['event_time', 'DESC']]
       });
@@ -64,7 +64,7 @@ module.exports = {
           {
             model: Device,
             as: 'device',
-            attributes: ['device_name', 'install_location']
+            attributes: ['install_location']
           },
           {
             model: Video,
