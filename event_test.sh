@@ -1,8 +1,7 @@
 #!/bin/bash
 
 # 服务器配置
-API_BASE_URL="http://localhost:3000"
-# API_BASE_URL="http://120.79.205.110"
+# API_BASE_URL="http://localhost:3000"
 
 # 颜色输出
 GREEN='\033[0;32m'

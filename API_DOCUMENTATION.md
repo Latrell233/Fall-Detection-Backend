@@ -10,10 +10,9 @@ Content-Type: application/json
 
 请求体：
 {
-  "device_id": "DEVICE_001",      // 必填，6-50字符
-  "device_secret": "abcd1234",    // 必填，6-100字符
-  "device_name": "客厅摄像头",     // 必填，2-100字符
-  "model_version": "v1.0",       // 必填，最大50字符
+  "device_id": "DEVICE_001",      // 必填
+  "device_secret": "abcd1234",    // 必填
+  "device_name": "客厅摄像头",     // 必填
   "install_location": "老人房间"   // 可选
 }
 
@@ -25,8 +24,7 @@ Content-Type: application/json
     "device_name": "客厅摄像头",
     "status": "offline",
     "device_token": "eyJhbGci...",  // 设备后续API使用的token
-    "install_location": "老人房间",
-    "model_version": "v1.0"
+    "install_location": "老人房间"
   }
 }
 
@@ -75,13 +73,13 @@ Content-Type: application/json
 
 请求体：
 {
-  "device_id": "DEVICE_001",    // 必填，最大50字符
+  "device_id": "DEVICE_001",    // 必填
   "event_type": "fall",         // 必填，只能是 fall, abnormal, other
   "event_time": "2024-03-20T10:00:00Z",  // 必填，ISO格式
   "confidence": 0.95,           // 必填，0-1之间
-  "image_path": "/images/DEVICE_001/1234567890.jpg",  // 可选，最大255字符
-  "video_path": "/videos/DEVICE_001/1234567890.mp4",  // 可选，最大255字符
-  "alarm_message": "检测到跌倒"  // 可选，最大255字符
+  "image_path": "/images/DEVICE_001/1234567890.jpg",  // 可选
+  "video_path": "/videos/DEVICE_001/1234567890.mp4",  // 可选
+  "alarm_message": "检测到跌倒"  // 可选
 }
 
 响应：
@@ -114,7 +112,7 @@ Content-Type: application/json
 
 请求体：
 {
-  "device_id": "DEVICE_001"  // 必填，最大50字符
+  "device_id": "DEVICE_001"  // 必填
 }
 
 响应：
@@ -135,7 +133,7 @@ Content-Type: application/json
 GET /api/v1/devices/info
 Authorization: Bearer {access_token}
 Query参数：
-- device_id: 设备ID（最大50字符）
+- device_id: 设备ID
 
 响应：
 {
@@ -145,7 +143,6 @@ Query参数：
     "device_name": "客厅摄像头",
     "status": "online",
     "install_location": "老人房间",
-    "model_version": "v1.0",
     "last_active": "2024-03-20T10:00:00Z",
     "config_json": {}
   }
@@ -167,10 +164,8 @@ Content-Type: application/json
 
 请求体：
 {
-  "username": "user123",        // 必填，3-30字符
-  "password": "password123",    // 必填，最少8字符
-  "name": "User Name",         // 必填，2-30字符
-  "contact_info": "user@example.com"  // 必填，邮箱格式
+  "username": "user123",        // 必填
+  "password": "password123"     // 必填
 }
 
 响应：
@@ -200,9 +195,7 @@ Content-Type: application/json
   "data": {
     "user": {
       "id": 1,
-      "username": "user123",
-      "name": "User Name",
-      "contact_info": "user@example.com"
+      "username": "user123"
     },
     "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
     "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
@@ -224,9 +217,8 @@ Content-Type: application/json
 请求体：
 {
   "device_id": "DEVICE_001",
-  "device_secret": "abcd1234",  // 必填，6-100字符
-  "device_name": "客厅摄像头",  // 必填，2-100字符
-  "model_version": "v1.0",     // 必填，最大50字符
+  "device_secret": "abcd1234",  // 必填
+  "device_name": "客厅摄像头",  // 必填
   "install_location": "老人房间"
 }
 
@@ -238,8 +230,7 @@ Content-Type: application/json
     "device_name": "客厅摄像头",
     "status": "offline",
     "device_token": "eyJhbGci...",  // 设备后续API使用的token
-    "install_location": "老人房间",
-    "model_version": "v1.0"
+    "install_location": "老人房间"
   }
 }
 
@@ -264,13 +255,13 @@ Content-Type: application/json
 
 请求体：
 {
-  "device_id": "DEVICE_001",    // 必填，最大50字符
+  "device_id": "DEVICE_001",    // 必填
   "event_type": "fall",         // 必填，只能是 fall, abnormal, other
   "event_time": "2024-03-20T10:00:00Z",  // 必填，ISO格式
   "confidence": 0.95,           // 必填，0-1之间
-  "image_path": "test.jpg",     // 可选，最大255字符
-  "video_path": "test.mp4",     // 可选，最大255字符
-  "alarm_message": "检测到跌倒"  // 可选，最大255字符
+  "image_path": "/images/DEVICE_001/1234567890.jpg",  // 可选
+  "video_path": "/videos/DEVICE_001/1234567890.mp4",  // 可选
+  "alarm_message": "检测到跌倒"  // 可选
 }
 
 响应：
@@ -383,9 +374,7 @@ Authorization: Bearer {access_token}
   "success": true,
   "data": {
     "id": 1,
-    "username": "user123",
-    "name": "User Name",
-    "contact_info": "user@example.com"
+    "username": "user123"
   }
 }
 

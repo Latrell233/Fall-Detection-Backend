@@ -21,9 +21,7 @@ async function initDatabase() {
       // 创建测试用户
       const testUser = await models.User.create({
         username: 'testuser',
-        password_hash: await bcrypt.hash('test123', 10),
-        name: 'Test User',
-        contact_info: 'test@example.com'
+        password_hash: await bcrypt.hash('test123', 10)
       });
       console.log('测试用户创建成功:', testUser.username);
 
@@ -35,7 +33,6 @@ async function initDatabase() {
         install_location: 'Living Room',
         device_secret: 'test_secret_123',
         status: 'online',
-        model_version: '1.0.0',
         last_active: new Date(),
         config_json: {
           threshold: 0.8,

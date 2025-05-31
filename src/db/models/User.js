@@ -8,24 +8,17 @@ const User = sequelize.define('User', {
     autoIncrement: true
   },
   username: {
-      type: DataTypes.STRING(50),
+    type: DataTypes.STRING,
     allowNull: false,
     unique: true
   },
   password_hash: {
-      type: DataTypes.STRING(100),
+    type: DataTypes.STRING,
     allowNull: false
   },
-  name: {
-      type: DataTypes.STRING(100),
-    allowNull: false
-  },
-  contact_info: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
-      validate: {
-        isEmail: true
-      }
+  reset_token: {
+    type: DataTypes.STRING,
+    allowNull: true
   },
   created_at: {
     type: DataTypes.DATE,

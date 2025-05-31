@@ -26,7 +26,6 @@ const deviceController = {
         install_location: device.install_location,
         status: device.status,
         last_active: device.last_active,
-        model_version: device.model_version,
         config: device.config_json
       });
     } catch (err) {
@@ -89,8 +88,7 @@ const deviceController = {
           'device_name',
           'install_location',
           'status',
-          'last_active',
-          'model_version'
+          'last_active'
         ]
       });
 
@@ -160,7 +158,7 @@ const deviceController = {
   // 设备注册和绑定
   async bindDevice(req, res) {
     try {
-      const { device_id, device_secret, device_name, model_version } = req.body;
+      const { device_id, device_secret, device_name } = req.body;
       const userId = req.user.userId;
       const { Device } = req.app.locals.db;
       
@@ -177,7 +175,6 @@ const deviceController = {
             device_id,
             device_secret,
             device_name,
-            model_version,
             status: 'offline',
             user_id: userId,
             install_location: '未设置',
@@ -220,8 +217,7 @@ const deviceController = {
           device_name: device.device_name,
           status: device.status,
           device_token: deviceToken,
-          install_location: device.install_location,
-          model_version: device.model_version
+          install_location: device.install_location
         }
       });
     } catch (err) {
@@ -295,7 +291,7 @@ const deviceController = {
 
   async registerDevice(req, res) {
     try {
-      const { device_id, device_secret, device_name, model_version } = req.body;
+      const { device_id, device_secret, device_name } = req.body;
       
       // 检查设备是否已存在
       const existingDevice = await Device.findOne({
@@ -311,7 +307,6 @@ const deviceController = {
         device_id,
         device_secret,
         device_name,
-        model_version,
         status: 'offline',
         user_id: null,
         install_location: '未设置',
@@ -321,7 +316,6 @@ const deviceController = {
       res.status(201).json({
         device_id: newDevice.device_id,
         device_name: newDevice.device_name,
-        model_version: newDevice.model_version,
         status: newDevice.status
       });
     } catch (err) {

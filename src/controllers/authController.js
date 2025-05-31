@@ -1,7 +1,6 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const config = require('../../config/config');
-const { sendResetEmail } = require('../services/emailService');
 
 const saltRounds = 10;
 
@@ -22,9 +21,9 @@ function generateTokens(userId) {
 module.exports = {
   async register(req, res) {
     try {
-      const { username, password, name, contact_info } = req.body;
+      const { username, password } = req.body;
       
-      console.log('Registration attempt:', { username, name, contact_info });
+      console.log('Registration attempt:', { username });
       
       // Check if user already exists
       const existingUser = await req.app.locals.db.User.findOne({
@@ -47,9 +46,7 @@ module.exports = {
       console.log('Attempting to create new user...');
       const user = await req.app.locals.db.User.create({
         username,
-        password_hash: hashedPassword,
-        name,
-        contact_info
+        password_hash: hashedPassword
       });
       console.log('User created successfully:', user.user_id);
 
@@ -74,7 +71,7 @@ module.exports = {
       // Get user from database
       const user = await req.app.locals.db.User.findOne({
         where: { username },
-        attributes: ['user_id', 'username', 'password_hash', 'name', 'contact_info']
+        attributes: ['user_id', 'username', 'password_hash']
       });
 
       if (!user) {
@@ -103,9 +100,7 @@ module.exports = {
         data: {
           user: {
             id: user.user_id,
-            username: user.username,
-            name: user.name,
-            contact_info: user.contact_info
+            username: user.username
           },
           ...tokens
         }
@@ -157,7 +152,7 @@ module.exports = {
       // Check if user exists
       const user = await req.app.locals.db.User.findOne({
         where: { username },
-        attributes: ['user_id', 'username', 'contact_info']
+        attributes: ['user_id', 'username']
       });
 
       if (!user) {
@@ -175,13 +170,10 @@ module.exports = {
       // Save reset token to database
       await user.update({ reset_token: resetToken });
 
-      // Send reset email
-      await sendResetEmail(user.contact_info, resetToken);
-      console.log('Password reset email sent to:', user.contact_info);
-
       res.json({ 
         success: true,
-        message: 'Password reset email sent' 
+        message: 'Password reset token generated',
+        resetToken
       });
     } catch (err) {
       console.error('Password reset request error details:', {

@@ -10,7 +10,7 @@ const userController = {
 
       const user = await User.findOne({
         where: { user_id: userId },
-        attributes: ['user_id', 'username', 'name', 'contact_info']
+        attributes: ['user_id', 'username']
       });
 
       if (!user) {
@@ -21,9 +21,7 @@ const userController = {
         success: true,
         data: {
           id: user.user_id,
-          username: user.username,
-          name: user.name,
-          contact_info: user.contact_info
+          username: user.username
         }
       });
     } catch (err) {
