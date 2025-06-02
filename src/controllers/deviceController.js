@@ -89,10 +89,26 @@ const deviceController = {
         ]
       });
 
-      res.json(devices);
+      if (devices.length === 0) {
+        return res.json({
+          code: 0,
+          message: '无已绑定设备',
+          data: null
+        });
+      }
+
+      res.json({
+        code: 1,
+        message: '获取设备列表成功',
+        data: devices
+      });
     } catch (err) {
       console.error('List devices error:', err);
-      res.status(500).json({ error: 'Failed to list devices' });
+      res.status(500).json({ 
+        code: -1,
+        message: '获取设备列表失败',
+        error: err.message 
+      });
     }
   },
 

@@ -234,6 +234,37 @@ Content-Type: application/json
   }
 }
 
+GET /api/v1/devices
+Authorization: Bearer {access_token}
+
+响应：
+{
+  "code": 1,
+  "message": "获取设备列表成功",
+  "data": [
+    {
+      "device_id": "DEVICE_001",
+      "install_location": "老人房间",
+      "status": "online",
+      "last_active": "2024-03-20T10:00:00Z"
+    }
+  ]
+}
+
+无设备时响应：
+{
+  "code": 0,
+  "message": "无已绑定设备",
+  "data": null
+}
+
+错误响应：
+{
+  "code": -1,
+  "message": "获取设备列表失败",
+  "error": "错误详情"
+}
+
 PUT /api/v1/devices/{deviceId}/status
 Authorization: Bearer {access_token}
 Content-Type: application/json
