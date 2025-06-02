@@ -97,10 +97,13 @@ const deviceController = {
         });
       }
 
+      // 将 Sequelize 模型实例转换为普通对象
+      const deviceList = devices.map(device => device.get({ plain: true }));
+
       res.json({
         code: 1,
         message: '获取设备列表成功',
-        data: devices
+        data: deviceList
       });
     } catch (err) {
       console.error('List devices error:', err);
