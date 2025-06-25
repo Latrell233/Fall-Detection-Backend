@@ -1,7 +1,3 @@
-FROM nginx:1.25
-
+FROM nginx:1.25-alpine
 COPY nginx.conf /etc/nginx/nginx.conf
-COPY html/ /usr/share/nginx/html/
-
-# 可选：复制静态资源目录（如有）
-# COPY ../public /usr/share/nginx/html 
+COPY index.html /usr/share/nginx/html/index.html 
