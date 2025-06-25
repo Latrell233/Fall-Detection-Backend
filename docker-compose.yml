@@ -60,6 +60,20 @@ services:
       - emqx_data:/opt/emqx/data
     restart: unless-stopped
 
+  nginx:
+    build:
+      context: ./nginx
+    container_name: fall_detection_nginx
+    depends_on:
+      - backend
+      - emqx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./public:/usr/share/nginx/html:ro
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   emqx_data:
