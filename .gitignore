@@ -42,3 +42,4 @@ config/dev.js
 *.bak
 *.tmp
 *.temp
+AImd/
