@@ -29,7 +29,7 @@ const bindDeviceSchema = Joi.object({
 
 const unbindDeviceSchema = Joi.object({
   body: Joi.object({
-    device_id: Joi.string().required()
+    // 移除device_id字段，因为一对一关系下用户只能有一个设备
   })
 });
 

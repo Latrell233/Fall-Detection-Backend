@@ -52,14 +52,14 @@ router.get('/info',
 );
 
 // Update device status
-router.put('/:deviceId/status', 
+router.put('/status', 
   authenticate,
   validate(updateDeviceSchema),
   deviceController.updateDeviceStatus
 );
 
 // Delete device
-router.delete('/:deviceId',
+router.delete('/',
   authenticate,
   deviceController.deleteDevice
 );

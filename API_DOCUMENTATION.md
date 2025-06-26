@@ -12,7 +12,6 @@ Content-Type: application/json
 {
   "device_id": "DEVICE_001",      // 必填
   "device_secret": "abcd1234",    // 必填
-  "device_name": "客厅摄像头",     // 必填
   "install_location": "老人房间"   // 可选
 }
 
@@ -21,7 +20,6 @@ Content-Type: application/json
   "success": true,
   "data": {
     "device_id": "DEVICE_001",
-    "device_name": "客厅摄像头",
     "status": "offline",
     "device_token": "eyJhbGci...",  // 设备后续API使用的token
     "install_location": "老人房间"
@@ -30,8 +28,8 @@ Content-Type: application/json
 
 错误响应：
 {
-  "error": "Device already registered",
-  "details": "This device ID is already registered to another user"
+  "error": "User already has a bound device",
+  "details": "User already bound to device: DEVICE_002"
 }
 ```
 
@@ -112,19 +110,19 @@ Content-Type: application/json
 
 请求体：
 {
-  "device_id": "DEVICE_001"  // 必填
+  // 无需指定device_id，系统会自动解绑用户的设备
 }
 
 响应：
 {
   "success": true,
-  "message": "Device deleted successfully"
+  "message": "Device unbound successfully"
 }
 
 错误响应：
 {
-  "error": "Device not found",
-  "details": "The specified device does not exist or is not bound to your account"
+  "error": "No device found for user",
+  "details": "The user does not have any bound device"
 }
 ```
 
@@ -132,15 +130,12 @@ Content-Type: application/json
 ```
 GET /api/v1/devices/info
 Authorization: Bearer {access_token}
-Query参数：
-- device_id: 设备ID
 
 响应：
 {
   "success": true,
   "data": {
     "device_id": "DEVICE_001",
-    "device_name": "客厅摄像头",
     "status": "online",
     "install_location": "老人房间",
     "last_active": "2024-03-20T10:00:00Z",
@@ -150,8 +145,8 @@ Query参数：
 
 错误响应：
 {
-  "error": "Device not found",
-  "details": "The specified device does not exist"
+  "error": "No device bound to user",
+  "details": "The user does not have any bound device"
 }
 ```
 
@@ -218,7 +213,6 @@ Content-Type: application/json
 {
   "device_id": "DEVICE_001",
   "device_secret": "abcd1234",  // 必填
-  "device_name": "客厅摄像头",  // 必填
   "install_location": "老人房间"
 }
 
@@ -227,7 +221,6 @@ Content-Type: application/json
   "success": true,
   "data": {
     "device_id": "DEVICE_001",
-    "device_name": "客厅摄像头",
     "status": "offline",
     "device_token": "eyJhbGci...",  // 设备后续API使用的token
     "install_location": "老人房间"
@@ -265,7 +258,7 @@ Authorization: Bearer {access_token}
   "error": "错误详情"
 }
 
-PUT /api/v1/devices/{deviceId}/status
+PUT /api/v1/devices/status
 Authorization: Bearer {access_token}
 Content-Type: application/json
 
@@ -278,6 +271,15 @@ Content-Type: application/json
 {
   "success": true,
   "message": "Device status updated successfully"
+}
+
+DELETE /api/v1/devices
+Authorization: Bearer {access_token}
+
+响应：
+{
+  "success": true,
+  "message": "Device deleted successfully"
 }
 
 POST /api/v1/devices/event
@@ -441,6 +443,13 @@ GET /health
 - 设备认证：Device Token
   - 格式：`Authorization: Device {token}`
   - 有效期：30天
+
+### 重要变更说明
+**用户与设备关系已更新为一对一关系：**
+- 每个用户只能绑定一个设备
+- 设备注册时会检查用户是否已有绑定设备
+- 设备解绑和删除操作不再需要指定设备ID
+- API路由已简化，移除设备ID参数
 
 ### 文件存储说明
 1. 基础目录结构：

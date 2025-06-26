@@ -39,23 +39,16 @@ const deviceController = {
   async updateDeviceStatus(req, res) {
     try {
       const { userId } = req.user;
-      const { device_id } = req.params;
       const { status } = req.body;
       const { Device } = req.app.locals.db;
 
-      // Verify device ownership
-      await validateDeviceOwnership(userId, device_id);
-
-      // Update device status
+      // 查找用户的设备
       const device = await Device.findOne({
-        where: {
-          device_id,
-          user_id: userId
-        }
+        where: { user_id: userId }
       });
 
       if (!device) {
-        return res.status(404).json({ error: 'Device not found' });
+        return res.status(404).json({ error: 'No device found for user' });
       }
 
       await device.update({
@@ -79,7 +72,7 @@ const deviceController = {
       const { userId } = req.user;
       const { Device } = req.app.locals.db;
 
-      const devices = await Device.findAll({
+      const device = await Device.findOne({
         where: { user_id: userId },
         attributes: [
           'device_id',
@@ -89,7 +82,7 @@ const deviceController = {
         ]
       });
 
-      if (devices.length === 0) {
+      if (!device) {
         return res.json({
           code: 0,
           message: '无已绑定设备',
@@ -98,12 +91,12 @@ const deviceController = {
       }
 
       // 将 Sequelize 模型实例转换为普通对象
-      const deviceList = devices.map(device => device.get({ plain: true }));
+      const deviceData = device.get({ plain: true });
 
       res.json({
         code: 1,
         message: '获取设备列表成功',
-        data: deviceList
+        data: [deviceData]  // 保持数组格式以兼容现有API
       });
     } catch (err) {
       console.error('List devices error:', err);
@@ -118,21 +111,23 @@ const deviceController = {
   async deleteDevice(req, res) {
     try {
       const userId = req.user.userId;
-      const device_id = req.params.deviceId;
       const { Device } = req.app.locals.db;
 
-      if (!userId || !device_id) {
+      if (!userId) {
         return res.status(400).json({ error: 'Missing required parameters' });
       }
 
-      // Verify device ownership
-      await validateDeviceOwnership(userId, device_id, req.app.locals.db);
+      // 查找用户的设备
+      const device = await Device.findOne({
+        where: { user_id: userId }
+      });
+
+      if (!device) {
+        return res.status(404).json({ error: 'No device found for user' });
+      }
 
       const result = await Device.destroy({
-        where: {
-          device_id,
-          user_id: userId
-        }
+        where: { user_id: userId }
       });
 
       if (result === 0) {
@@ -179,6 +174,18 @@ const deviceController = {
       const { Device } = req.app.locals.db;
       
       console.log('Attempting to register/bind device:', { device_id, device_secret, userId });
+
+      // 检查用户是否已经绑定了其他设备
+      const existingUserDevice = await Device.findOne({
+        where: { user_id: userId }
+      });
+
+      if (existingUserDevice) {
+        return res.status(400).json({ 
+          error: 'User already has a bound device',
+          details: `User already bound to device: ${existingUserDevice.device_id}`
+        });
+      }
 
       let device = await Device.findOne({
         where: { device_id }
@@ -249,25 +256,23 @@ const deviceController = {
     const transaction = await sequelize.transaction();
     
     try {
-      const { device_id } = req.body;
       const userId = req.user.userId;
       const { Device, AlarmRecord, Video } = req.app.locals.db;
 
-      if (!device_id || !userId) {
+      if (!userId) {
         return res.status(400).json({ error: 'Missing required parameters' });
       }
 
-      // 检查设备是否属于当前用户
+      // 查找用户的设备
       const device = await Device.findOne({
-        where: {
-          device_id,
-          user_id: userId
-        }
+        where: { user_id: userId }
       });
 
       if (!device) {
-        return res.status(404).json({ error: 'Device not found' });
+        return res.status(404).json({ error: 'No device found for user' });
       }
+
+      const device_id = device.device_id;
 
       // 1. 先删除设备相关的所有视频记录
       await Video.destroy({

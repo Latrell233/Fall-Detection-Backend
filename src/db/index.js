@@ -55,7 +55,7 @@ const initDatabase = async () => {
     Video = VideoModel(sequelize, Sequelize);
 
     // 定义模型关联
-    User.hasMany(Device, { foreignKey: 'user_id' });
+    User.hasOne(Device, { foreignKey: 'user_id' });
     Device.belongsTo(User, { foreignKey: 'user_id' });
 
     Device.hasMany(AlarmRecord, { foreignKey: 'device_id' });
