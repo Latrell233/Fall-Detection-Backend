@@ -74,46 +74,46 @@ services:
       - ./nginx/index.html:/usr/share/nginx/html/index.html:ro
     restart: unless-stopped
 
-  livekit-server:
-    image: livekit/livekit-server:latest
-    container_name: fall_detection_livekit
-    ports:
-      - "7880:7880"     # WebSocket信令
-      - "7881:7881"     # 管理API
-      - "50000-60000:50000-60000/udp"  # WebRTC媒体端口范围
-    volumes:
-      - ./livekit/livekit.yaml:/etc/livekit.yaml:ro
-    environment:
-      LIVEKIT_API_KEY: "${LIVEKIT_API_KEY:-lk_default_key}"
-      LIVEKIT_API_SECRET: "${LIVEKIT_API_SECRET:-sk_default_secret}"
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      DB_NAME: fall_detection
-    depends_on:
-      - db
-    restart: unless-stopped
+  # livekit-server:
+  #   image: livekit/livekit-server:latest
+  #   container_name: fall_detection_livekit
+  #   ports:
+  #     - "7880:7880"     # WebSocket信令
+  #     - "7881:7881"     # 管理API
+  #     - "50000-60000:50000-60000/udp"  # WebRTC媒体端口范围
+  #   volumes:
+  #     - ./livekit/livekit.yaml:/etc/livekit.yaml:ro
+  #   environment:
+  #     LIVEKIT_API_KEY: "${LIVEKIT_API_KEY:-lk_default_key}"
+  #     LIVEKIT_API_SECRET: "${LIVEKIT_API_SECRET:-sk_default_secret}"
+  #     DB_HOST: db
+  #     DB_PORT: 5432
+  #     DB_USER: postgres
+  #     DB_PASSWORD: postgres
+  #     DB_NAME: fall_detection
+  #   depends_on:
+  #     - db
+  #   restart: unless-stopped
 
-  ai-agent:
-    build: 
-      context: ./livekit/agents
-    container_name: fall_detection_ai_agent
-    environment:
-      LIVEKIT_URL: "ws://livekit-server:7880"
-      LIVEKIT_API_KEY: "${LIVEKIT_API_KEY:-lk_default_key}"
-      LIVEKIT_API_SECRET: "${LIVEKIT_API_SECRET:-sk_default_secret}"
-      OPENAI_API_KEY: "${OPENAI_API_KEY}"
-      # AI模型配置（可通过 .env 文件自定义）
-      OPENAI_MODEL: "${OPENAI_MODEL:-gpt-4o-mini}"
-      OPENAI_TEMPERATURE: "${OPENAI_TEMPERATURE:-0.8}"
-      TTS_VOICE: "${TTS_VOICE:-nova}"
-      STT_LANGUAGE: "${STT_LANGUAGE:-zh}"
-    volumes:
-      - ./conversations:/app/conversations  # 挂载对话记录保存目录
-    depends_on:
-      - livekit-server
-    restart: unless-stopped
+  # ai-agent:
+  #   build: 
+  #     context: ./livekit/agents
+  #   container_name: fall_detection_ai_agent
+  #   environment:
+  #     LIVEKIT_URL: "ws://livekit-server:7880"
+  #     LIVEKIT_API_KEY: "${LIVEKIT_API_KEY:-lk_default_key}"
+  #     LIVEKIT_API_SECRET: "${LIVEKIT_API_SECRET:-sk_default_secret}"
+  #     OPENAI_API_KEY: "${OPENAI_API_KEY}"
+  #     # AI模型配置（可通过 .env 文件自定义）
+  #     OPENAI_MODEL: "${OPENAI_MODEL:-gpt-4o-mini}"
+  #     OPENAI_TEMPERATURE: "${OPENAI_TEMPERATURE:-0.8}"
+  #     TTS_VOICE: "${TTS_VOICE:-nova}"
+  #     STT_LANGUAGE: "${STT_LANGUAGE:-zh}"
+  #   volumes:
+  #     - ./conversations:/app/conversations  # 挂载对话记录保存目录
+  #   depends_on:
+  #     - livekit-server
+  #   restart: unless-stopped
 
 volumes:
   postgres_data:
