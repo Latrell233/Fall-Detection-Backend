@@ -85,7 +85,7 @@ const deviceController = {
       if (!device) {
         return res.json({
           code: 0,
-          message: '无已绑定设备',
+          message: 'no bound devices',
           data: null
         });
       }
@@ -95,14 +95,14 @@ const deviceController = {
 
       res.json({
         code: 1,
-        message: '获取设备列表成功',
+        message: 'The list of devices was obtained successfully',
         data: [deviceData]  // 保持数组格式以兼容现有API
       });
     } catch (err) {
       console.error('List devices error:', err);
       res.status(500).json({ 
         code: -1,
-        message: '获取设备列表失败',
+        message: 'Failed to obtain the device list',
         error: err.message 
       });
     }
@@ -199,7 +199,7 @@ const deviceController = {
             device_secret,
             status: 'offline',
             user_id: userId,
-            install_location: '未设置',
+            install_location: 'Not Set',
             config_json: {}
           });
         } catch (createError) {
@@ -327,7 +327,7 @@ const deviceController = {
         device_secret,
         status: 'offline',
         user_id: null,
-        install_location: '未设置',
+        install_location: 'Not Set',
         config_json: {}
       });
 

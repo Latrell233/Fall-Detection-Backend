@@ -56,7 +56,7 @@ async function startServer() {
     
     // 运行数据库初始化脚本
     await initDatabase();
-    console.log('数据库初始化完成');
+    console.log('The database initialization has been completed');
 
     // 将数据库对象和模型添加到 app 中，供路由使用
     app.locals.db = models;

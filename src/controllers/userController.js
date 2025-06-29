@@ -1,6 +1,9 @@
 const { User, Device, AlarmRecord, Video } = require('../db').getModels();
 const { getSequelize } = require('../db');
 const { Op } = require('sequelize');
+const bcrypt = require('bcrypt');
+
+const saltRounds = 10;
 
 const userController = {
   async getCurrentUser(req, res) {
@@ -27,6 +30,79 @@ const userController = {
     } catch (err) {
       console.error('Get user info error:', err);
       res.status(500).json({ error: 'Failed to get user info' });
+    }
+  },
+
+  async updateUsername(req, res) {
+    try {
+      const userId = req.user.userId;
+      const { newUsername } = req.body;
+      const { User } = req.app.locals.db;
+
+      // 检查新用户名是否已存在
+      const existingUser = await User.findOne({
+        where: { username: newUsername }
+      });
+
+      if (existingUser) {
+        return res.status(400).json({ 
+          error: 'Username already exists',
+          details: 'The new username is already taken'
+        });
+      }
+
+      // 更新用户名
+      const user = await User.findOne({
+        where: { user_id: userId }
+      });
+
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      await user.update({ username: newUsername });
+
+      res.json({
+        success: true,
+        message: 'Username updated successfully',
+        data: {
+          id: user.user_id,
+          username: newUsername
+        }
+      });
+    } catch (err) {
+      console.error('Update username error:', err);
+      res.status(500).json({ error: 'Failed to update username' });
+    }
+  },
+
+  async updatePassword(req, res) {
+    try {
+      const userId = req.user.userId;
+      const { newPassword } = req.body;
+      const { User } = req.app.locals.db;
+
+      // 哈希新密码
+      const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+      // 更新密码
+      const user = await User.findOne({
+        where: { user_id: userId }
+      });
+
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      await user.update({ password_hash: hashedPassword });
+
+      res.json({
+        success: true,
+        message: 'Password updated successfully'
+      });
+    } catch (err) {
+      console.error('Update password error:', err);
+      res.status(500).json({ error: 'Failed to update password' });
     }
   },
 
