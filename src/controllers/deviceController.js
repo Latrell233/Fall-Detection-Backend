@@ -229,7 +229,7 @@ const deviceController = {
       const deviceToken = jwt.sign(
         { device_id: device.device_id },
         config.server.jwtSecret,
-        { expiresIn: '30d' }
+        { expiresIn: config.server.deviceTokenExpiresIn }
       );
 
       res.json({
@@ -338,6 +338,59 @@ const deviceController = {
     } catch (err) {
       console.error('Register device error:', err);
       res.status(500).json({ error: 'Failed to register device' });
+    }
+  },
+
+  // 设备token刷新
+  async refreshDeviceToken(req, res) {
+    try {
+      const { device_id, device_secret } = req.body;
+      const { Device } = req.app.locals.db;
+
+      // 验证设备存在且密钥正确
+      const device = await Device.findOne({
+        where: { 
+          device_id,
+          device_secret
+        }
+      });
+
+      if (!device) {
+        return res.status(401).json({ 
+          error: 'Invalid device credentials',
+          details: 'Device not found or secret is incorrect'
+        });
+      }
+
+      // 检查设备是否已绑定用户
+      if (!device.user_id) {
+        return res.status(400).json({ 
+          error: 'Device not bound',
+          details: 'Device must be bound to a user before refreshing token'
+        });
+      }
+
+      // 生成新的设备令牌
+      const deviceToken = jwt.sign(
+        { device_id: device.device_id },
+        config.server.jwtSecret,
+        { expiresIn: config.server.deviceTokenExpiresIn }
+      );
+
+      res.json({
+        success: true,
+        data: {
+          device_id: device.device_id,
+          device_token: deviceToken,
+          expires_in: config.server.deviceTokenExpiresIn
+        }
+      });
+    } catch (err) {
+      console.error('Refresh device token error:', err);
+      res.status(500).json({ 
+        error: 'Failed to refresh device token',
+        details: err.message
+      });
     }
   },
 

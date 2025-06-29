@@ -30,8 +30,10 @@ module.exports = {
   server: {
     port: process.env.PORT || 3000,
     jwtSecret: process.env.JWT_SECRET || 'your_jwt_secret_key_here',
-    jwtExpiresIn: '24h',
-    refreshTokenExpiresIn: '7d'
+    jwtExpiresIn: '15m',
+    refreshTokenExpiresIn: '7d',
+    deviceTokenExpiresIn: '90d',
+    resetTokenExpiresIn: '1h'
   },
   mqtt: {
     brokerUrl: process.env.MQTT_BROKER || 'mqtt://localhost:1883',

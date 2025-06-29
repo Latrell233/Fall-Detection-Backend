@@ -8,12 +8,12 @@ function generateTokens(userId) {
   const accessToken = jwt.sign(
     { userId },
     config.server.jwtSecret,
-    { expiresIn: '15m' }
+    { expiresIn: config.server.jwtExpiresIn }
   );
   const refreshToken = jwt.sign(
     { userId },
     config.server.jwtSecret,
-    { expiresIn: '7d' }
+    { expiresIn: config.server.refreshTokenExpiresIn }
   );
   return { accessToken, refreshToken };
 }
@@ -125,7 +125,7 @@ module.exports = {
       const accessToken = jwt.sign(
         { userId: decoded.userId }, 
         config.server.jwtSecret, 
-        { expiresIn: '15m' }
+        { expiresIn: config.server.jwtExpiresIn }
       );
 
       res.json({ 
@@ -164,7 +164,7 @@ module.exports = {
       const resetToken = jwt.sign(
         { userId: user.user_id }, 
         config.server.jwtSecret, 
-        { expiresIn: '1h' }
+        { expiresIn: config.server.resetTokenExpiresIn }
       );
 
       // Save reset token to database

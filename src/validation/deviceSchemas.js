@@ -51,11 +51,23 @@ const reportEventSchema = Joi.object({
   })
 });
 
+const refreshDeviceTokenSchema = Joi.object({
+  body: Joi.object({
+    device_id: Joi.string().required().messages({
+      'any.required': 'Device ID is required'
+    }),
+    device_secret: Joi.string().required().messages({
+      'any.required': 'Device secret is required'
+    })
+  })
+});
+
 module.exports = {
   registerDeviceSchema,
   updateDeviceSchema,
   bindDeviceSchema,
   unbindDeviceSchema,
   getDeviceSchema,
-  reportEventSchema
+  reportEventSchema,
+  refreshDeviceTokenSchema
 };
