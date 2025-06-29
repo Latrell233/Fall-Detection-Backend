@@ -416,6 +416,136 @@ Authorization: Bearer {access_token}
   "error": "User not found",
   "details": "The specified user does not exist"
 }
+
+PUT /api/v1/users/me/username
+Authorization: Bearer {access_token}
+Content-Type: application/json
+
+请求体：
+{
+  "newUsername": "newuser123"  // 必填，3-30个字符
+}
+
+响应：
+{
+  "success": true,
+  "message": "Username updated successfully",
+  "data": {
+    "id": 1,
+    "username": "newuser123"
+  }
+}
+
+错误响应：
+{
+  "error": "Username already exists",
+  "details": "The new username is already taken"
+}
+
+验证错误响应：
+{
+  "errors": [
+    {
+      "field": "body.newUsername",
+      "message": "Username must be at least 3 characters long"
+    }
+  ]
+}
+
+PUT /api/v1/users/me/password
+Authorization: Bearer {access_token}
+Content-Type: application/json
+
+请求体：
+{
+  "newPassword": "newpassword123"  // 必填，最少6个字符
+}
+
+响应：
+{
+  "success": true,
+  "message": "Password updated successfully"
+}
+
+验证错误响应：
+{
+  "errors": [
+    {
+      "field": "body.newPassword",
+      "message": "Password must be at least 6 characters long"
+    }
+  ]
+}
+
+DELETE /api/v1/users/me
+Authorization: Bearer {access_token}
+
+响应：
+{
+  "success": true,
+  "message": "User deleted successfully"
+}
+
+错误响应：
+{
+  "error": "Failed to delete user",
+  "details": "错误详情"
+}
+```
+
+### 5. 反馈管理 [已验证]
+```
+POST /api/v1/feedback
+Authorization: Bearer {access_token}
+Content-Type: application/json
+
+请求体：
+{
+  "rating": 4,                    // 必填，0-5的整数
+  "content": "应用很好用，界面简洁"  // 可选，最大1000字符
+}
+
+响应：
+{
+  "success": true,
+  "message": "Feedback submitted successfully",
+  "data": {
+    "feedback_id": 1,
+    "rating": 4,
+    "content": "应用很好用，界面简洁",
+    "created_at": "2024-03-20T10:00:00.000Z"
+  }
+}
+
+验证错误响应：
+{
+  "errors": [
+    {
+      "field": "body.rating",
+      "message": "Rating must be at least 0"
+    }
+  ]
+}
+
+GET /api/v1/feedback
+Authorization: Bearer {access_token}
+
+响应：
+{
+  "success": true,
+  "data": {
+    "feedback_id": 1,
+    "rating": 4,
+    "content": "应用很好用，界面简洁",
+    "created_at": "2024-03-20T10:00:00.000Z"
+  }
+}
+
+无反馈时响应：
+{
+  "error": "No feedback found",
+  "details": "User has not submitted any feedback yet"
+}
 ```
 
 ## 三、通用说明

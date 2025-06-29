@@ -37,9 +37,10 @@ const UserModel = require('./models/User');
 const DeviceModel = require('./models/Device');
 const AlarmRecordModel = require('./models/AlarmRecord');
 const VideoModel = require('./models/Video');
+const FeedbackModel = require('./models/Feedback');
 
 // 初始化模型
-let User, Device, AlarmRecord, Video;
+let User, Device, AlarmRecord, Video, Feedback;
 
 // 数据库连接和初始化方法
 const initDatabase = async () => {
@@ -53,6 +54,7 @@ const initDatabase = async () => {
     Device = DeviceModel(sequelize, Sequelize);
     AlarmRecord = AlarmRecordModel(sequelize, Sequelize);
     Video = VideoModel(sequelize, Sequelize);
+    Feedback = FeedbackModel(sequelize, Sequelize);
 
     // 定义模型关联
     User.hasOne(Device, { foreignKey: 'user_id' });
@@ -67,6 +69,9 @@ const initDatabase = async () => {
     AlarmRecord.hasMany(Video, { foreignKey: 'alarm_id' });
     Video.belongsTo(AlarmRecord, { foreignKey: 'alarm_id' });
 
+    User.hasMany(Feedback, { foreignKey: 'user_id' });
+    Feedback.belongsTo(User, { foreignKey: 'user_id' });
+
     // 同步模型到数据库
     await sequelize.sync();
     console.log('数据库模型同步完成');
@@ -77,7 +82,8 @@ const initDatabase = async () => {
       User,
       Device,
       AlarmRecord,
-      Video
+      Video,
+      Feedback
     };
   } catch (err) {
     console.error('数据库初始化失败:', err);

@@ -65,6 +65,14 @@ async function initDatabase() {
         format: 'mp4'
       });
       console.log('测试视频记录创建成功:', testVideo.video_id);
+
+      // 创建测试反馈记录
+      const testFeedback = await models.Feedback.create({
+        user_id: testUser.user_id,
+        rating: 5,
+        content: '系统很好用，检测准确率高'
+      });
+      console.log('测试反馈记录创建成功:', testFeedback.feedback_id);
     }
 
     console.log('数据库初始化完成');
