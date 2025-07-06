@@ -28,7 +28,6 @@ async function initDatabase() {
       // 创建测试设备
       const testDevice = await models.Device.create({
         device_id: 'TEST_DEVICE_001',
-        device_name: 'Test Camera',
         user_id: testUser.user_id,
         install_location: 'Living Room',
         device_secret: 'test_secret_123',

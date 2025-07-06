@@ -1,45 +1,45 @@
-# 跌倒检测系统 API 文档
+# Fall Detection System API Documentation
 
-## 一、嵌入式设备端 API
+## I. Embedded Device APIs
 
-### 1. 设备认证与注册 [已验证]
+### 1. Device Authentication and Registration [Verified]
 ```
 POST /api/v1/devices/register
 Authorization: Bearer {user_access_token}
 Content-Type: application/json
 
-请求体：
+Request Body:
 {
-  "device_id": "DEVICE_001",      // 必填
-  "device_secret": "abcd1234",    // 必填
-  "install_location": "老人房间"   // 可选
+  "device_id": "DEVICE_001",      // Required
+  "device_secret": "abcd1234",    // Required
+  "install_location": "Elder's Room"   // Optional
 }
 
-响应：
+Response:
 {
   "success": true,
   "data": {
     "device_id": "DEVICE_001",
     "status": "offline",
-    "device_token": "eyJhbGci...",  // 设备后续API使用的token
-    "install_location": "老人房间"
+    "device_token": "eyJhbGci...",  // Token for subsequent device APIs
+    "install_location": "Elder's Room"
   }
 }
 
-错误响应：
+Error Response:
 {
   "error": "User already has a bound device",
   "details": "User already bound to device: DEVICE_002"
 }
 ```
 
-### 2. 设备心跳 [已验证]
+### 2. Device Heartbeat [Verified]
 ```
 POST /api/v1/devices/heartbeat
 Authorization: Device {device_token}
 Content-Type: application/json
 
-请求体：
+Request Body:
 {
   "device_id": "DEVICE_001",
   "timestamp": "2024-03-20T10:00:00Z",
@@ -47,7 +47,7 @@ Content-Type: application/json
   "temp": 45.2
 }
 
-响应：
+Response:
 {
   "success": true,
   "data": {
@@ -56,31 +56,31 @@ Content-Type: application/json
   }
 }
 
-错误响应：
+Error Response:
 {
   "error": "Invalid device token",
   "details": "The provided device token is invalid or expired"
 }
 ```
 
-### 3. 事件上报 [已验证]
+### 3. Event Reporting [Verified]
 ```
 POST /api/v1/devices/event
 Authorization: Device {device_token}
 Content-Type: application/json
 
-请求体：
+Request Body:
 {
-  "device_id": "DEVICE_001",    // 必填
-  "event_type": "fall",         // 必填，只能是 fall, abnormal, other
-  "event_time": "2024-03-20T10:00:00Z",  // 必填，ISO格式
-  "confidence": 0.95,           // 必填，0-1之间
-  "image_path": "/images/DEVICE_001/1234567890.jpg",  // 可选
-  "video_path": "/videos/DEVICE_001/1234567890.mp4",  // 可选
-  "alarm_message": "检测到跌倒"  // 可选
+  "device_id": "DEVICE_001",    // Required
+  "event_type": "fall",         // Required, must be fall, abnormal, or other
+  "event_time": "2024-03-20T10:00:00Z",  // Required, ISO format
+  "confidence": 0.95,           // Required, between 0-1
+  "image_path": "/images/DEVICE_001/1234567890.jpg",  // Optional
+  "video_path": "/videos/DEVICE_001/1234567890.mp4",  // Optional
+  "alarm_message": "Fall detected"  // Optional
 }
 
-响应：
+Response:
 {
   "success": true,
   "data": {
@@ -95,87 +95,87 @@ Content-Type: application/json
   }
 }
 
-错误响应：
+Error Response:
 {
   "error": "Invalid event data",
   "details": "Event type must be one of: fall, abnormal, other"
 }
 ```
 
-### 4. 设备解绑 [已验证]
+### 4. Device Unbinding [Verified]
 ```
 POST /api/v1/devices/unbind
 Authorization: Bearer {access_token}
 Content-Type: application/json
 
-请求体：
+Request Body:
 {
-  // 无需指定device_id，系统会自动解绑用户的设备
+  // No device_id needed, system will automatically unbind user's device
 }
 
-响应：
+Response:
 {
   "success": true,
   "message": "Device unbound successfully"
 }
 
-错误响应：
+Error Response:
 {
   "error": "No device found for user",
   "details": "The user does not have any bound device"
 }
 ```
 
-### 5. 获取设备详情 [已验证]
+### 5. Get Device Details [Verified]
 ```
 GET /api/v1/devices/info
 Authorization: Bearer {access_token}
 
-响应：
+Response:
 {
   "success": true,
   "data": {
     "device_id": "DEVICE_001",
     "status": "online",
-    "install_location": "老人房间",
+    "install_location": "Elder's Room",
     "last_active": "2024-03-20T10:00:00Z",
     "config_json": {}
   }
 }
 
-错误响应：
+Error Response:
 {
   "error": "No device bound to user",
   "details": "The user does not have any bound device"
 }
 ```
 
-### 6. 设备Token刷新 [已验证]
-安全机制：
-双重验证：需要设备ID和设备密钥
-绑定检查：只有已绑定用户的设备才能刷新token
-无认证要求：设备无需当前token即可刷新（解决过期问题）
+### 6. Device Token Refresh [Verified]
+Security Mechanism:
+Dual Verification: Requires device ID and device secret
+Binding Check: Only devices bound to users can refresh tokens
+No Authentication Required: Devices can refresh without current token (solves expiration issues)
 ```
 POST /api/v1/devices/refresh-token
 Content-Type: application/json
 
-请求体：
+Request Body:
 {
-  "device_id": "DEVICE_001",    // 必填
-  "device_secret": "abcd1234"   // 必填
+  "device_id": "DEVICE_001",    // Required
+  "device_secret": "abcd1234"   // Required
 }
 
-响应：
+Response:
 {
   "success": true,
   "data": {
     "device_id": "DEVICE_001",
-    "device_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",  // 新的设备token，有效期90天
+    "device_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",  // New device token, valid for 90 days
     "expires_in": "90d"
   }
 }
 
-错误响应：
+Error Response:
 {
   "error": "Invalid device credentials",
   "details": "Device not found or secret is incorrect"
@@ -186,7 +186,7 @@ Content-Type: application/json
   "details": "Device must be bound to a user before refreshing token"
 }
 
-验证错误响应：
+Validation Error Response:
 {
   "errors": [
     {
@@ -197,26 +197,26 @@ Content-Type: application/json
 }
 ```
 
-## 二、移动端 API
+## II. Mobile Application APIs
 
-### 1. 用户认证 [已验证]
+### 1. User Authentication [Verified]
 ```
 POST /api/v1/auth/register
 Content-Type: application/json
 
-请求体：
+Request Body:
 {
-  "username": "user123",        // 必填
-  "password": "password123"     // 必填
+  "username": "user123",        // Required
+  "password": "password123"     // Required
 }
 
-响应：
+Response:
 {
   "success": true,
   "user_id": 1
 }
 
-错误响应：
+Error Response:
 {
   "error": "Registration failed",
   "details": "Username already exists"
@@ -225,13 +225,13 @@ Content-Type: application/json
 POST /api/v1/auth/login
 Content-Type: application/json
 
-请求体：
+Request Body:
 {
   "username": "user123",
   "password": "password123"
 }
 
-响应：
+Response:
 {
   "success": true,
   "data": {
@@ -244,7 +244,7 @@ Content-Type: application/json
   }
 }
 
-错误响应：
+Error Response:
 {
   "error": "Invalid credentials"
 }
@@ -252,19 +252,19 @@ Content-Type: application/json
 POST /api/v1/auth/reset-password
 Content-Type: application/json
 
-请求体：
+Request Body:
 {
-  "username": "user123"  // 必填
+  "username": "user123"  // Required
 }
 
-响应：
+Response:
 {
   "success": true,
   "message": "Password reset token generated",
-  "resetToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."  // 密码重置令牌，有效期1小时
+  "resetToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."  // Password reset token, valid for 1 hour
 }
 
-错误响应：
+Error Response:
 {
   "error": "User not found",
   "details": "The specified user does not exist"
@@ -273,24 +273,24 @@ Content-Type: application/json
 POST /api/v1/auth/reset-password/{token}
 Content-Type: application/json
 
-请求体：
+Request Body:
 {
-  "newPassword": "newpassword123"  // 必填，最少6个字符
+  "newPassword": "newpassword123"  // Required, minimum 6 characters
 }
 
-响应：
+Response:
 {
   "success": true,
   "message": "Password reset successful"
 }
 
-错误响应：
+Error Response:
 {
   "error": "Invalid or expired token",
   "details": "The provided token is invalid or has expired"
 }
 
-验证错误响应：
+Validation Error Response:
 {
   "errors": [
     {
@@ -300,38 +300,38 @@ Content-Type: application/json
   ]
 }
 ```
-自动续期：当accessToken过期时，使用refreshToken获取新的accessToken
-用户体验：用户无需重新登录，保持会话连续性
-安全性：accessToken短期有效，refreshToken长期有效但用途单一
-工作流程：
-用户登录 → 获得accessToken（15分钟）+ refreshToken（7天）
-accessToken过期 → 使用refreshToken调用刷新API
-获得新的accessToken → 继续使用API
-refreshToken过期 → 需要重新登录
+Auto-renewal: When accessToken expires, use refreshToken to get new accessToken
+User Experience: Users don't need to re-login, maintaining session continuity
+Security: accessToken short-term valid, refreshToken long-term valid but single-purpose
+Workflow:
+User login → Get accessToken (15 minutes) + refreshToken (7 days)
+accessToken expires → Use refreshToken to call refresh API
+Get new accessToken → Continue using API
+refreshToken expires → Need to re-login
 ```
 POST /api/v1/auth/refresh
 Content-Type: application/json
 
-请求体：
+Request Body:
 {
-  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."  // 必填，登录时获得的refresh token
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."  // Required, refresh token obtained during login
 }
 
-响应：
+Response:
 {
   "success": true,
   "data": {
-    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."  // 新的access token，有效期15分钟
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."  // New access token, valid for 15 minutes
   }
 }
 
-错误响应：
+Error Response:
 {
   "error": "Invalid refresh token",
   "details": "The provided refresh token is invalid or expired"
 }
 
-验证错误响应：
+Validation Error Response:
 {
   "errors": [
     {
@@ -342,78 +342,78 @@ Content-Type: application/json
 }
 ```
 
-### 2. 设备管理 [已验证]
+### 2. Device Management [Verified]
 ```
 POST /api/v1/devices/register
 Authorization: Bearer {user_access_token}
 Content-Type: application/json
 
-请求体：
+Request Body:
 {
   "device_id": "DEVICE_001",
-  "device_secret": "abcd1234",  // 必填
-  "install_location": "老人房间"
+  "device_secret": "abcd1234",  // Required
+  "install_location": "Elder's Room"
 }
 
-响应：
+Response:
 {
   "success": true,
   "data": {
     "device_id": "DEVICE_001",
     "status": "offline",
-    "device_token": "eyJhbGci...",  // 设备后续API使用的token
-    "install_location": "老人房间"
+    "device_token": "eyJhbGci...",  // Token for subsequent device APIs
+    "install_location": "Elder's Room"
   }
 }
 
 GET /api/v1/devices
 Authorization: Bearer {access_token}
 
-响应：
+Response:
 {
   "code": 1,
   "message": "The list of devices was obtained successfully",
   "data": [
     {
       "device_id": "DEVICE_001",
-      "install_location": "老人房间",
+      "install_location": "Elder's Room",
       "status": "online",
       "last_active": "2024-03-20T10:00:00Z"
     }
   ]
 }
 
-无设备时响应：
+No Device Response:
 {
   "code": 0,
   "message": "no bound devices",
   "data": null
 }
 
-错误响应：
+Error Response:
 {
   "code": -1,
   "message": "Failed to obtain the device list",
-  "error": "错误详情"
+  "error": "Error details"
 }
 
 PUT /api/v1/devices/status
 Authorization: Bearer {access_token}
 Content-Type: application/json
 
-请求体：
+Request Body:
 {
-  "status": "online"  // 必填，只能是 online 或 offline
+  "status": "online"  // Required, must be online or offline
 }
 
-响应：
+Response:
 {
   "device_id": "DEVICE_001",
   "status": "online",
   "last_active": "2024-03-20T10:00:00Z"
 }
 
-错误响应：
+Error Response:
 {
   "error": "No device found for user"
 }
@@ -421,12 +421,12 @@ Content-Type: application/json
 DELETE /api/v1/devices
 Authorization: Bearer {access_token}
 
-响应：
+Response:
 {
   "message": "Device deleted successfully"
 }
 
-错误响应：
+Error Response:
 {
   "error": "No device found for user"
 }
@@ -435,18 +435,18 @@ POST /api/v1/devices/event
 Authorization: Device {device_token}
 Content-Type: application/json
 
-请求体：
+Request Body:
 {
-  "device_id": "DEVICE_001",    // 必填
-  "event_type": "fall",         // 必填，只能是 fall, abnormal, other
-  "event_time": "2024-03-20T10:00:00Z",  // 必填，ISO格式
-  "confidence": 0.95,           // 必填，0-1之间
-  "image_path": "/images/DEVICE_001/1234567890.jpg",  // 可选
-  "video_path": "/videos/DEVICE_001/1234567890.mp4",  // 可选
-  "alarm_message": "检测到跌倒"  // 可选
+  "device_id": "DEVICE_001",    // Required
+  "event_type": "fall",         // Required, must be fall, abnormal, or other
+  "event_time": "2024-03-20T10:00:00Z",  // Required, ISO format
+  "confidence": 0.95,           // Required, between 0-1
+  "image_path": "/images/DEVICE_001/1234567890.jpg",  // Optional
+  "video_path": "/videos/DEVICE_001/1234567890.mp4",  // Optional
+  "alarm_message": "Fall detected"  // Optional
 }
 
-响应：
+Response:
 {
   "success": true,
   "data": {
@@ -462,18 +462,18 @@ Content-Type: application/json
 }
 ```
 
-### 3. 告警管理 [已验证]
+### 3. Alarm Management [Verified]
 ```
 GET /api/v1/alarms
 Authorization: Bearer {access_token}
-Query参数：
-- from: 开始时间（ISO格式）
-- to: 结束时间（ISO格式，必须大于from）
-- status: 告警状态（只能是 handled 或 unhandled）
-- device_id: 设备ID
-- minConfidence: 最小置信度（0-1之间）
+Query Parameters:
+- from: Start time (ISO format)
+- to: End time (ISO format, must be greater than from)
+- status: Alarm status (must be handled or unhandled)
+- device_id: Device ID
+- minConfidence: Minimum confidence (between 0-1)
 
-响应：
+Response:
 {
   "success": true,
   "data": {
@@ -486,12 +486,12 @@ Query参数：
         "confidence": 0.95,
         "image_path": "/images/DEVICE_001/1234567890.jpg",
         "video_path": "/videos/DEVICE_001/1234567890.mp4",
-        "alarm_message": "检测到跌倒",
+        "alarm_message": "Fall detected",
         "handled": false,
         "created_at": "2024-03-20T10:00:00Z",
         "device": {
-          "device_name": "客厅摄像头",
-          "install_location": "老人房间"
+          "device_name": "Living Room Camera",
+          "install_location": "Elder's Room"
         }
       }
     ],
@@ -502,7 +502,7 @@ Query参数：
 GET /api/v1/alarms/{alarmId}
 Authorization: Bearer {access_token}
 
-响应：
+Response:
 {
   "success": true,
   "data": {
@@ -513,12 +513,12 @@ Authorization: Bearer {access_token}
     "confidence": 0.95,
     "image_path": "/images/DEVICE_001/1234567890.jpg",
     "video_path": "/videos/DEVICE_001/1234567890.mp4",
-    "alarm_message": "检测到跌倒",
+    "alarm_message": "Fall detected",
     "handled": false,
     "created_at": "2024-03-20T10:00:00Z",
     "device": {
-      "device_name": "客厅摄像头",
-      "install_location": "老人房间"
+      "device_name": "Living Room Camera",
+      "install_location": "Elder's Room"
     },
     "video": {
       "video_id": 1,
@@ -533,25 +533,25 @@ POST /api/v1/alarms/{alarmId}/ack
 Authorization: Bearer {access_token}
 Content-Type: application/json
 
-请求体：
+Request Body:
 {
-  "action": "confirm",  // 必填，只能是 confirm 或 dismiss
-  "message": "已通知家属"  // 可选，最大255字符
+  "action": "confirm",  // Required, must be confirm or dismiss
+  "message": "Family notified"  // Optional, maximum 255 characters
 }
 
-响应：
+Response:
 {
   "success": true,
   "message": "Alarm acknowledged successfully"
 }
 ```
 
-### 4. 用户管理 [已验证]
+### 4. User Management [Verified]
 ```
 GET /api/v1/users/me
 Authorization: Bearer {access_token}
 
-响应：
+Response:
 {
   "success": true,
   "data": {
@@ -560,7 +560,7 @@ Authorization: Bearer {access_token}
   }
 }
 
-错误响应：
+Error Response:
 {
   "error": "User not found",
   "details": "The specified user does not exist"
@@ -570,12 +570,12 @@ PUT /api/v1/users/me/username
 Authorization: Bearer {access_token}
 Content-Type: application/json
 
-请求体：
+Request Body:
 {
-  "newUsername": "newuser123"  // 必填，3-30个字符
+  "newUsername": "newuser123"  // Required, 3-30 characters
 }
 
-响应：
+Response:
 {
   "success": true,
   "message": "Username updated successfully",
@@ -585,13 +585,13 @@ Content-Type: application/json
   }
 }
 
-错误响应：
+Error Response:
 {
   "error": "Username already exists",
   "details": "The new username is already taken"
 }
 
-验证错误响应：
+Validation Error Response:
 {
   "errors": [
     {
@@ -605,18 +605,18 @@ PUT /api/v1/users/me/password
 Authorization: Bearer {access_token}
 Content-Type: application/json
 
-请求体：
+Request Body:
 {
-  "newPassword": "newpassword123"  // 必填，最少6个字符
+  "newPassword": "newpassword123"  // Required, minimum 6 characters
 }
 
-响应：
+Response:
 {
   "success": true,
   "message": "Password updated successfully"
 }
 
-验证错误响应：
+Validation Error Response:
 {
   "errors": [
     {
@@ -629,44 +629,44 @@ Content-Type: application/json
 DELETE /api/v1/users/me
 Authorization: Bearer {access_token}
 
-响应：
+Response:
 {
   "success": true,
   "message": "User deleted successfully"
 }
 
-错误响应：
+Error Response:
 {
   "error": "Failed to delete user",
-  "details": "错误详情"
+  "details": "Error details"
 }
 ```
 
-### 5. 反馈管理 [已验证]
+### 5. Feedback Management [Verified]
 ```
 POST /api/v1/feedback
 Authorization: Bearer {access_token}
 Content-Type: application/json
 
-请求体：
+Request Body:
 {
-  "rating": 4,                    // 必填，0-5的整数
-  "content": "应用很好用，界面简洁"  // 可选，最大1000字符
+  "rating": 4,                    // Required, integer between 0-5
+  "content": "App is great, interface is clean"  // Optional, maximum 1000 characters
 }
 
-响应：
+Response:
 {
   "success": true,
   "message": "Feedback submitted successfully",
   "data": {
     "feedback_id": 1,
     "rating": 4,
-    "content": "应用很好用，界面简洁",
+    "content": "App is great, interface is clean",
     "created_at": "2024-03-20T10:00:00.000Z"
   }
 }
 
-验证错误响应：
+Validation Error Response:
 {
   "errors": [
     {
@@ -679,36 +679,36 @@ Content-Type: application/json
 GET /api/v1/feedback
 Authorization: Bearer {access_token}
 
-响应：
+Response:
 {
   "success": true,
   "data": {
     "feedback_id": 1,
     "rating": 4,
-    "content": "应用很好用，界面简洁",
+    "content": "App is great, interface is clean",
     "created_at": "2024-03-20T10:00:00.000Z"
   }
 }
 
-无反馈时响应：
+No Feedback Response:
 {
   "error": "No feedback found",
   "details": "User has not submitted any feedback yet"
 }
 ```
 
-### 6. 媒体文件管理 [已验证]
+### 6. Media File Management [Verified]
 ```
 POST /api/v1/media/upload
 Authorization: Bearer {access_token}
 Content-Type: multipart/form-data
 
-请求体：
-- file: 文件（必填，最大50MB）
-- type: 文件类型（可选，默认为images）
-- device_id: 设备ID（必填）
+Request Body:
+- file: File (required, maximum 50MB)
+- type: File type (optional, default is images)
+- device_id: Device ID (required)
 
-响应：
+Response:
 {
   "success": true,
   "data": {
@@ -718,7 +718,7 @@ Content-Type: multipart/form-data
   }
 }
 
-错误响应：
+Error Response:
 {
   "error": "No file uploaded"
 }
@@ -730,72 +730,71 @@ Content-Type: multipart/form-data
 GET /api/v1/media/:type/:deviceId/:filename
 Authorization: Bearer {access_token}
 
-响应：
-- 直接返回文件内容，Content-Type根据文件扩展名自动设置
+Response:
+- Directly returns file content, Content-Type automatically set based on file extension
 
-错误响应：
+Error Response:
 {
   "error": "File not found"
 }
 ```
 
-## 三、通用说明
+## III. General Information
 
-### 健康检查 [已验证]
+### Health Check [Verified]
 ```
 GET /health
 
-响应：
+Response:
 {
   "status": "OK"
 }
 
-错误响应：
+Error Response:
 {
   "error": "Internal Server Error",
-  "details": "错误详情"
+  "details": "Error details"
 }
 ```
 
-### 认证方式
-- 用户认证：Bearer Token
-  - 格式：`Authorization: Bearer {token}`
-  - 有效期：15分钟
-  - 用途：访问受保护的API资源
-- 用户刷新：Refresh Token
-  - 格式：请求体参数 `{"refreshToken": "token"}`
-  - 有效期：7天
-  - 用途：刷新过期的access token，无需重新登录
-- 设备认证：Device Token
-  - 格式：`Authorization: Device {token}`
-  - 有效期：90天
-  - 用途：设备与后端服务交互认证
-  - 刷新：通过 `/api/v1/devices/refresh-token` 使用设备ID和密钥刷新
-- 密码重置：Reset Token
-  - 格式：URL参数 `/api/v1/auth/reset-password/{token}`
-  - 有效期：1小时
-  - 用途：忘记密码时的安全重置
+### Authentication Methods
+- User Authentication: Bearer Token
+  - Format: `Authorization: Bearer {token}`
+  - Validity: 15 minutes
+  - Purpose: Access protected API resources
+- User Refresh: Refresh Token
+  - Format: Request body parameter `{"refreshToken": "token"}`
+  - Validity: 7 days
+  - Purpose: Refresh expired access token without re-login
+- Device Authentication: Device Token
+  - Format: `Authorization: Device {token}`
+  - Validity: 90 days
+  - Purpose: Device authentication for backend service interaction
+  - Refresh: Through `/api/v1/devices/refresh-token` using device ID and secret
+- Password Reset: Reset Token
+  - Format: URL parameter `/api/v1/auth/reset-password/{token}`
+  - Validity: 1 hour
+  - Purpose: Secure password reset when forgotten
 
-### 重要变更说明
-**用户与设备关系已更新为一对一关系：**
-- 每个用户只能绑定一个设备
-- 设备注册时会检查用户是否已有绑定设备
-- 设备解绑和删除操作不再需要指定设备ID
-- API路由已简化，移除设备ID参数
+### Important Change Notes
+**User-Device Relationship Updated to One-to-One:**
+- Each user can only bind to one device
+- Device registration checks if user already has a bound device
+- Device unbinding and deletion operations no longer require device ID specification
+- API routes simplified, device ID parameters removed
 
-### 文件存储说明
-1. 基础目录结构：
-   - 上传目录：`/uploads/`
-     - 图片上传：`/uploads/images/{device_id}/{timestamp}.jpg`
-     - 视频上传：`/uploads/videos/{device_id}/{timestamp}.mp4`
-   - 公共目录：`/public/`
-     - 图片访问：`/public/images/{device_id}/{timestamp}.jpg`
-     - 视频访问：`/public/videos/{device_id}/{timestamp}.mp4`
+### File Storage Information
+1. Basic Directory Structure:
+   - Upload Directory: `/uploads/`
+     - Image Upload: `/uploads/images/{device_id}/{timestamp}.jpg`
+     - Video Upload: `/uploads/videos/{device_id}/{timestamp}.mp4`
+   - Public Directory: `/public/`
+     - Static File Service
 
-2. 文件命名规则：
-   - 图片：`{device_id}_{timestamp}.jpg`
-   - 视频：`{device_id}_{timestamp}.mp4`
+2. File Naming Rules:
+   - Images: `{timestamp}.jpg`
+   - Videos: `{timestamp}.mp4`
 
-3. 访问URL：
-   - 图片：`http://{domain}/api/v1/media/images/{device_id}/{timestamp}.jpg`
-   - 视频：`http://{domain}/api/v1/media/videos/{device_id}/{timestamp}.mp4`
+3. Access URLs:
+   - Images: `http://{domain}/api/v1/media/images/{device_id}/{filename}`
+   - Videos: `http://{domain}/api/v1/media/videos/{device_id}/{filename}` 
